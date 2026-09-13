@@ -30,14 +30,22 @@ export interface TaskGroup {
   tasks: TaskItem[];
 }
 
+/** Formats a Date as YYYY-MM-DD using local calendar fields (not UTC). */
+export function localDateStr(d: Date = new Date()) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function todayStr() {
-  return new Date().toISOString().substring(0, 10);
+  return localDateStr();
 }
 
 function tomorrowStr() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().substring(0, 10);
+  return localDateStr(d);
 }
 
 function monthKey(dateStr: string) {
@@ -45,7 +53,7 @@ function monthKey(dateStr: string) {
 }
 
 export function useTasks() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +78,14 @@ export function useTasks() {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
     fetchTasks();
-  }, [fetchTasks]);
+  }, [fetchTasks, user, authLoading]);
 
   const addTask = async (taskData: {
     title: string;
@@ -184,10 +198,10 @@ export function useTasks() {
         tomorrowGroup.push(task);
         return;
       }
-      // Overdue-but-completed tasks and any other date fall into the "day" buckets.
-      const key = date < today ? today : date;
-      if (!byDay.has(key)) byDay.set(key, []);
-      byDay.get(key)!.push(task);
+      // Overdue-but-completed tasks and any other date fall into the "day" buckets,
+      // keyed by their actual due date so it isn't lost or merged into "today".
+      if (!byDay.has(date)) byDay.set(date, []);
+      byDay.get(date)!.push(task);
     });
 
     const sortedDays = Array.from(byDay.keys()).sort();

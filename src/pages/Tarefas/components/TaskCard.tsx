@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import type { TaskItem } from '@/hooks/useTasks';
+import { localDateStr } from '@/hooks/useTasks';
 import UrgencyBadge from '@/components/notifications/UrgencyBadge';
 import { PRIORITY_COLORS } from './TaskModal';
 
@@ -20,7 +21,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, categories, onToggle, onDelete }: TaskCardProps) {
-  const isOverdue = !task.is_completed && !!task.due_date && task.due_date.substring(0, 10) < new Date().toISOString().substring(0, 10);
+  const isOverdue = !task.is_completed && !!task.due_date && task.due_date.substring(0, 10) < localDateStr();
 
   return (
     <div
