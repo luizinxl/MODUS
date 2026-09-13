@@ -82,7 +82,7 @@ export default function TarefasDashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 mr-12 md:mr-0">
           {showSearch ? (
             <input
               autoFocus
@@ -219,13 +219,15 @@ export default function TarefasDashboard() {
       </div>
 
       {/* Floating add button */}
-      <button
-        onClick={() => openAddForm()}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center text-black shadow-lg transition-transform active:scale-95 z-20"
-        style={{ backgroundColor: '#A3E635', boxShadow: '0 4px 20px -4px #A3E63590' }}
-      >
-        <Plus size={24} strokeWidth={2.5} />
-      </button>
+      {!showAddForm && (
+        <button
+          onClick={() => openAddForm()}
+          className="fixed bottom-24 right-6 md:bottom-6 w-14 h-14 rounded-full flex items-center justify-center text-black shadow-lg transition-transform active:scale-95 z-[60]"
+          style={{ backgroundColor: '#A3E635', boxShadow: '0 4px 20px -4px #A3E63590' }}
+        >
+          <Plus size={24} strokeWidth={2.5} />
+        </button>
+      )}
 
       <AnimatePresence>
         {showAddForm && (
