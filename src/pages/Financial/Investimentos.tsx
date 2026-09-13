@@ -37,7 +37,7 @@ export default function Page() {
     : 0;
 
   const topHoldings = useMemo(() => {
-    return [...positions].sort((a, b) => b.current_value - a.current_value).slice(0, 5);
+    return [...positions].sort((a, b) => b.currentValue - a.currentValue).slice(0, 5);
   }, [positions]);
 
   const marketWatchItems = useMemo(() => {
@@ -220,13 +220,13 @@ export default function Page() {
                      </div>
                      <div>
                        <p className="text-sm font-semibold text-white">{p.ticker}</p>
-                       <p className="text-[10px] text-[#8E95A5] uppercase">{p.type}</p>
+                       <p className="text-[10px] text-[#8E95A5] uppercase">{p.investment_type}</p>
                      </div>
                    </div>
                    <div className="text-right">
-                     <p className="text-sm font-medium text-white">{formatPrice(p.current_value)}</p>
-                     <p className={`text-xs font-medium ${p.profit_percentage >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
-                       {formatPercent(p.profit_percentage)}
+                     <p className="text-sm font-medium text-white">{formatPrice(p.currentValue)}</p>
+                     <p className={`text-xs font-medium ${p.profitPercent >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
+                       {formatPercent(p.profitPercent)}
                      </p>
                    </div>
                  </div>
