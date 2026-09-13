@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink, CheckCircle2, Clock, AlertCircle, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import type { AcademicTask } from '@/types';
+import UrgencyBadge from '@/components/notifications/UrgencyBadge';
 
 interface DailyPanelProps {
   selectedDate: string | null;
@@ -139,9 +140,9 @@ function TaskCard({ task }: { task: AcademicTask }) {
             )}
           </div>
           
-          {/* Action Button */}
-          {task.ava_url && !isCompleted && (
-            <div className="mt-2 flex">
+          {/* Action Button & Badges */}
+          <div className="mt-2 flex items-center justify-between">
+            {task.ava_url && !isCompleted ? (
               <a
                 href={task.ava_url}
                 target="_blank"
@@ -155,8 +156,10 @@ function TaskCard({ task }: { task: AcademicTask }) {
                 Acessar AVA
                 <ExternalLink size={12} className="ml-0.5 opacity-70" />
               </a>
-            </div>
-          )}
+            ) : <div />}
+            
+            <UrgencyBadge dueDate={task.due_date} status={task.status} />
+          </div>
         </div>
       </div>
     </div>

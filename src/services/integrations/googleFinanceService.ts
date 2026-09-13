@@ -29,7 +29,7 @@ export const SYMBOL_LABELS: Record<string, string> = {
   '^N225': 'Nikkei 225',
   'USDBRL=X': 'USD/BRL',
   'EURBRL=X': 'EUR/BRL',
-  'BTCUSD=X': 'Bitcoin',
+  'BTC-USD': 'Bitcoin',
 };
 
 export async function getGlobalMarketOverview(): Promise<GlobalMarketOverview> {

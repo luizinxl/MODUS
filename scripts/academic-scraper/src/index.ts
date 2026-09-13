@@ -208,7 +208,11 @@ async function main() {
 
     // ---- 6. Sincronização ----
     logSection('6. Sincronização com Supabase');
-    const syncResult = await syncToSupabase(classifiedItems, mode);
+    const syncResult = await syncToSupabase(classifiedItems, mode, dashboard.courses.map(c => ({
+      code: c.code,
+      name: c.name,
+      progress: c.progress || 0
+    })));
 
     // ---- 7. Notificação ----
     logSection('7. Gerando Notificação');

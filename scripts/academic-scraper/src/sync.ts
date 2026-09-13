@@ -22,6 +22,7 @@ export interface SyncResult {
   unchanged: number;
   errors: number;
   changes: ChangeRecord[];
+  courses?: { code: string; name: string; progress: number }[];
 }
 
 export interface ChangeRecord {
@@ -172,7 +173,8 @@ function detectChanges(
  */
 export async function syncToSupabase(
   items: ClassifiedItem[],
-  mode: ExecutionMode
+  mode: ExecutionMode,
+  courses?: { code: string; name: string; progress: number }[]
 ): Promise<SyncResult> {
   const supabase = getSupabaseClient();
   const userId = getUserId();
@@ -184,6 +186,7 @@ export async function syncToSupabase(
     unchanged: 0,
     errors: 0,
     changes: [],
+    courses,
   };
 
   log(`Sincronizando ${items.length} itens (modo: ${mode})...`);
@@ -303,10 +306,13 @@ async function updateSyncState(
 
   if (mode === 'morning') {
     stateUpdate.last_morning_sync = now;
-    stateUpdate.last_morning_payload = JSON.stringify(result);
   } else {
     stateUpdate.last_evening_sync = now;
   }
+  
+  // Sempre salvar o payload no last_morning_payload para que o frontend tenha os dados mais recentes 
+  // (incluindo o progresso dos cursos), independente do modo de execução.
+  stateUpdate.last_morning_payload = JSON.stringify(result);
 
   try {
     const { data: existing } = await supabase

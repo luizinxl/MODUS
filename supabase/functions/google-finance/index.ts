@@ -1,5 +1,5 @@
 // Supabase Edge Function: google-finance
-// Busca dados de mercado global via Yahoo Finance (endpoint público, sem key).
+// Busca dados de mercado global via Yahoo Finance (endpoint v8/chart — mais estável).
 // Roda no servidor — evita CORS e expõe apenas o necessário ao frontend.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -9,29 +9,12 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Símbolos que representam "Google Finance-like" market overview
-// Yahoo Finance usa os mesmos tickers que o Google Finance
-const DEFAULT_SYMBOLS = {
-  // Índices globais
-  indices: [
-    '^GSPC',    // S&P 500
-    '^IXIC',    // Nasdaq
-    '^DJI',     // Dow Jones
-    '^FTSE',    // FTSE 100 (UK)
-    '^N225',    // Nikkei 225 (JP)
-  ],
-  // Moedas
-  currencies: [
-    'USDBRL=X',   // Dólar → Real
-    'EURBRL=X',   // Euro → Real
-    'BTCUSD=X',   // Bitcoin em USD
-  ],
-};
+const INDICES = ['^GSPC', '^IXIC', '^DJI', '^FTSE', '^N225'];
+const CURRENCIES = ['USDBRL=X', 'EURBRL=X', 'BTC-USD'];
 
 interface Quote {
   symbol: string;
   shortName: string;
-  longName: string;
   regularMarketPrice: number;
   regularMarketChange: number;
   regularMarketChangePercent: number;
@@ -39,54 +22,70 @@ interface Quote {
   marketState: string;
 }
 
-async function fetchYahooQuotes(symbols: string[]): Promise<Quote[]> {
-  const joined = symbols.join('%2C');
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${joined}&fields=shortName,longName,regularMarketPrice,regularMarketChange,regularMarketChangePercent,currency,marketState`;
+async function fetchQuote(symbol: string): Promise<Quote | null> {
+  const encoded = encodeURIComponent(symbol);
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?interval=1d&range=1d&includePrePost=false`;
 
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Modus/1.0)',
-    },
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://finance.yahoo.com/',
+        'Origin': 'https://finance.yahoo.com',
+      },
+    });
 
-  if (!res.ok) {
-    throw new Error(`Yahoo Finance error: ${res.status}`);
+    if (!res.ok) {
+      console.error(`Failed to fetch ${symbol}: HTTP ${res.status}`);
+      return null;
+    }
+
+    const json = await res.json();
+    const meta = json?.chart?.result?.[0]?.meta;
+    if (!meta) return null;
+
+    const previousClose = meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice;
+    const price = meta.regularMarketPrice ?? 0;
+    const change = price - previousClose;
+    const changePct = previousClose > 0 ? (change / previousClose) * 100 : 0;
+
+    return {
+      symbol: symbol,
+      shortName: meta.shortName ?? symbol,
+      regularMarketPrice: price,
+      regularMarketChange: change,
+      regularMarketChangePercent: changePct,
+      currency: meta.currency ?? 'USD',
+      marketState: meta.marketState ?? 'CLOSED',
+    };
+  } catch (e) {
+    console.error(`Error fetching ${symbol}:`, e);
+    return null;
   }
-
-  const json = await res.json();
-  const results: Quote[] = json?.quoteResponse?.result ?? [];
-  return results.map((q: any) => ({
-    symbol: q.symbol,
-    shortName: q.shortName ?? q.symbol,
-    longName: q.longName ?? q.shortName ?? q.symbol,
-    regularMarketPrice: q.regularMarketPrice ?? 0,
-    regularMarketChange: q.regularMarketChange ?? 0,
-    regularMarketChangePercent: q.regularMarketChangePercent ?? 0,
-    currency: q.currency ?? 'USD',
-    marketState: q.marketState ?? 'CLOSED',
-  }));
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
   }
 
   try {
-    const allSymbols = [
-      ...DEFAULT_SYMBOLS.indices,
-      ...DEFAULT_SYMBOLS.currencies,
-    ];
+    const allSymbols = [...INDICES, ...CURRENCIES];
 
-    const quotes = await fetchYahooQuotes(allSymbols);
+    // Fetch all in parallel
+    const results = await Promise.all(allSymbols.map(fetchQuote));
 
-    // Organizar por categoria
-    const indicesSymbols = new Set(DEFAULT_SYMBOLS.indices);
-    const currenciesSymbols = new Set(DEFAULT_SYMBOLS.currencies);
+    const quoteMap = new Map<string, Quote>();
+    results.forEach((q) => { if (q) quoteMap.set(q.symbol, q); });
 
-    const indices = quotes.filter((q) => indicesSymbols.has(q.symbol));
-    const currencies = quotes.filter((q) => currenciesSymbols.has(q.symbol));
+    const indices = INDICES.map((s) => quoteMap.get(s)).filter(Boolean) as Quote[];
+    const currencies = CURRENCIES.map((s) => {
+      // BTC-USD é retornado como BTC-USD mas a gente busca BTC-USD
+      const q = quoteMap.get(s);
+      return q;
+    }).filter(Boolean) as Quote[];
 
     const payload = {
       indices,
@@ -99,6 +98,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (err: any) {
+    console.error('Edge Function error:', err);
     return new Response(
       JSON.stringify({ error: err?.message ?? 'Erro interno' }),
       {

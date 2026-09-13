@@ -6,15 +6,20 @@
 // ============================================================
 
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { Browser, Page, Cookie } from 'puppeteer';
 import puppeteer from 'puppeteer';
 import {
   COOKIES_PATH,
+  DEBUG_DIR,
   AVA_LOGIN_URL,
   AVA_DASHBOARD_URL,
   PUPPETEER_CONFIG,
   getAvaCredentials,
 } from './config.js';
+
+const LOGIN_MAX_ATTEMPTS = 3;
+const LOGIN_RETRY_BASE_DELAY_MS = 3000;
 
 // ---- Logger ----
 function log(msg: string) {
@@ -72,9 +77,56 @@ async function isSessionValid(page: Page): Promise<boolean> {
   }
 }
 
+// ---- Debug em falha ----
+
+async function captureFailureDebug(page: Page, label: string): Promise<void> {
+  try {
+    await fs.mkdir(DEBUG_DIR, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const base = path.join(DEBUG_DIR, `${label}-${stamp}`);
+
+    await page.screenshot({ path: `${base}.png` as `${string}.png`, fullPage: true });
+    const html = await page.content();
+    await fs.writeFile(`${base}.html`, html, 'utf-8');
+
+    log(`Debug de falha salvo em ${base}.png / .html`);
+  } catch (err) {
+    log(`Não foi possível salvar debug de falha: ${err}`);
+  }
+}
+
+// ---- Prompts intermediários (Microsoft/Azure AD "Continuar conectado?") ----
+
+async function dismissInterstitialPrompts(page: Page): Promise<void> {
+  // Percorre alguns ciclos curtos aguardando telas intermediárias comuns do
+  // fluxo SSO (KMSI — "Keep Me Signed In" / "Continuar conectado?") que não
+  // fazem parte do fluxo previsto e travam a navegação se ignoradas.
+  for (let i = 0; i < 3; i++) {
+    await new Promise((r) => setTimeout(r, 800));
+
+    // Tela KMSI padrão do Azure AD / ADFS
+    const kmsiButton = await page.$('#idSIButton9');
+    if (kmsiButton) {
+      log('Prompt "Continuar conectado?" detectado — confirmando...');
+      try {
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15_000 }).catch(() => {}),
+          kmsiButton.click(),
+        ]);
+      } catch {
+        await page.evaluate((btn) => (btn as HTMLElement).click(), kmsiButton).catch(() => {});
+      }
+      continue;
+    }
+
+    // Nenhum prompt conhecido encontrado — encerra o loop
+    break;
+  }
+}
+
 // ---- Login ----
 
-async function performLogin(page: Page): Promise<boolean> {
+async function attemptLogin(page: Page): Promise<boolean> {
   const { user, pass } = getAvaCredentials();
 
   log('Iniciando login no AVA...');
@@ -140,6 +192,10 @@ async function performLogin(page: Page): Promise<boolean> {
       // Pode já ter finalizado a navegação
     }
     await new Promise((r) => setTimeout(r, 4000));
+
+    // Alguns fluxos SSO inserem um prompt extra ("Continuar conectado?")
+    // entre o envio de credenciais e o retorno POST para o AVA.
+    await dismissInterstitialPrompts(page);
   }
 
   // 4. Validação final da sessão pós-login
@@ -159,12 +215,43 @@ async function performLogin(page: Page): Promise<boolean> {
       .catch(() => '');
 
     log(`❌ Login falhou: ${errorMsg || 'Ainda na página de login'}`);
+    await captureFailureDebug(page, 'login-failed');
     return false;
   }
 
   log('Login bem-sucedido!');
   await saveCookies(page);
   return true;
+}
+
+/**
+ * Executa o login com retry/backoff — o fluxo SSO SAML é sensível a timing
+ * (redirecionamentos lentos, prompts intermediários inesperados), então uma
+ * falha isolada não deve derrubar a execução sem antes tentar de novo.
+ */
+async function performLogin(page: Page): Promise<boolean> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= LOGIN_MAX_ATTEMPTS; attempt++) {
+    try {
+      log(`Tentativa de login ${attempt}/${LOGIN_MAX_ATTEMPTS}...`);
+      const ok = await attemptLogin(page);
+      if (ok) return true;
+    } catch (err) {
+      lastError = err;
+      log(`Erro na tentativa ${attempt}: ${err}`);
+      await captureFailureDebug(page, 'login-error');
+    }
+
+    if (attempt < LOGIN_MAX_ATTEMPTS) {
+      const delay = LOGIN_RETRY_BASE_DELAY_MS * attempt;
+      log(`Aguardando ${delay}ms antes da próxima tentativa...`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+
+  if (lastError) log(`Login falhou após ${LOGIN_MAX_ATTEMPTS} tentativas: ${lastError}`);
+  return false;
 }
 
 // ---- Interface pública ----

@@ -36,6 +36,18 @@ export default function AcademicDashboard() {
     selectDay(date);
   };
 
+  let coursesProgress: { code: string; name: string; progress: number }[] = [];
+  try {
+    if (syncState?.last_morning_payload) {
+      const payload = JSON.parse(syncState.last_morning_payload);
+      if (payload.courses) {
+        coursesProgress = payload.courses;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse sync payload', e);
+  }
+
   if (loading && tasks.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-screen">
@@ -105,6 +117,29 @@ export default function AcademicDashboard() {
           colorClass="text-[#10B981]" 
         />
       </div>
+
+      {/* Course Progress Panel */}
+      {coursesProgress.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          {coursesProgress.map(course => (
+            <div key={course.code} className="p-4 rounded-xl bg-[#12141C] border border-[#1E2230] flex flex-col">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs font-bold text-white px-2 py-1 rounded bg-[#1E2230]">{course.code}</span>
+                <span className="text-xs font-bold" style={{ color: themeColor }}>{course.progress}%</span>
+              </div>
+              <h3 className="text-sm text-[#8E95A5] font-medium leading-snug line-clamp-2 mb-3" title={course.name}>
+                {course.name}
+              </h3>
+              <div className="mt-auto h-1.5 w-full bg-[#1E2230] rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-1000" 
+                  style={{ width: `${course.progress}%`, backgroundColor: themeColor }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main Layout: Unified Dashboard Panel */}
       <div className="bg-[#12141C] border border-[#1E2230] rounded-3xl p-6 flex flex-col lg:flex-row gap-8 flex-1 min-h-[700px]">

@@ -144,7 +144,6 @@ export function CalendarGrid({
               onClick={() => handleDayClick(dateStr)}
               className={clsx(
                 'rounded-2xl p-3 flex flex-col items-start justify-start relative transition-all border text-left overflow-hidden group',
-                'active:scale-[0.97] active:opacity-90',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C5CFC]',
                 isSelected
                   ? 'bg-gradient-to-br from-[#7C5CFC] to-[#5C3CE0] border-[#9074FF] text-white shadow-lg shadow-[#7C5CFC]/25'

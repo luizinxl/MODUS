@@ -45,14 +45,27 @@ async function extractCourseIds(page: Page): Promise<EnrolledCourse[]> {
     log(`Aviso ao acessar ${AVA_COURSES_URL}: ${err}`);
   }
 
-  // Extrair todos os links de curso da página
+  // Extrair todos os links de curso da página e seus progressos
   const courseLinks = await page.$$eval(
     'a[href*="course/view.php?id="]',
     (anchors) =>
-      anchors.map((a) => ({
-        href: a.getAttribute('href') || '',
-        text: (a.textContent || '').trim(),
-      }))
+      anchors.map((a) => {
+        const container = a.closest('.card, .coursebox, .list-group-item') || a.parentElement;
+        let progress = 0;
+        if (container) {
+          const progressEl = container.querySelector('.progress-bar, [role="progressbar"]');
+          if (progressEl) {
+            const val = progressEl.getAttribute('aria-valuenow');
+            if (val) progress = parseInt(val, 10);
+            else progress = parseInt((progressEl.textContent || '0').replace('%', ''), 10);
+          }
+        }
+        return {
+          href: a.getAttribute('href') || '',
+          text: (a.textContent || '').trim(),
+          progress: isNaN(progress) ? 0 : progress,
+        };
+      })
   );
 
   log(`Encontrados ${courseLinks.length} links de curso`);
@@ -71,7 +84,8 @@ async function extractCourseIds(page: Page): Promise<EnrolledCourse[]> {
       const idMatch = match.href.match(/id=(\d+)/);
       if (idMatch) {
         course.moodleCourseId = parseInt(idMatch[1], 10);
-        log(`  ✓ ${course.code} → id=${course.moodleCourseId}`);
+        course.progress = match.progress;
+        log(`  ✓ ${course.code} → id=${course.moodleCourseId}, progresso=${course.progress}%`);
       }
     } else if (course.moodleCourseId) {
       log(`  ℹ ${course.code} → usando fallback pré-configurado id=${course.moodleCourseId}`);

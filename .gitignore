@@ -16,6 +16,7 @@ vite.config.d.ts
 
 # Academic scraper
 scripts/academic-scraper/cookies.json
+scripts/academic-scraper/debug
 scripts/academic-scraper/node_modules
 scripts/academic-scraper/dist
 scripts/academic-scraper/.env

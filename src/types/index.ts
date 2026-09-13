@@ -62,6 +62,7 @@ export interface AcademicSyncState {
   last_evening_sync?: string;
   last_login_success?: boolean;
   last_error?: string;
+  last_morning_payload?: string;
   updated_at?: string;
 }
 

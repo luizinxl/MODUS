@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 
 // ---- Caminhos ----
 export const COOKIES_PATH = path.resolve(__dirname, '..', 'cookies.json');
+export const DEBUG_DIR = path.resolve(__dirname, '..', 'debug');
 
 // ---- URLs do AVA ----
 export const AVA_BASE = 'https://ava.univesp.br';
@@ -27,6 +28,7 @@ export interface EnrolledCourse {
   section: string;
   /** Preenchido dinamicamente ao scrape do dashboard ou fallback pré-configurado */
   moodleCourseId?: number;
+  progress?: number;
 }
 
 export const ENROLLED_COURSES: EnrolledCourse[] = [

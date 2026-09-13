@@ -36,7 +36,15 @@ interface ModuleColorsContextType {
 const ModuleColorsContext = createContext<ModuleColorsContextType | undefined>(undefined);
 
 export function ModuleColorsProvider({ children }: { children: React.ReactNode }) {
-  const [colors, setColors] = useState<ModuleColors>(defaultModuleColors);
+  const [colors, setColors] = useState<ModuleColors>(() => {
+    const saved = localStorage.getItem('dailys_module_colors');
+    if (saved) {
+      try {
+        return { ...defaultModuleColors, ...JSON.parse(saved) };
+      } catch (e) {}
+    }
+    return defaultModuleColors;
+  });
   const [loading, setLoading] = useState(true);
 
   // Apply colors to DOM
@@ -74,6 +82,7 @@ export function ModuleColorsProvider({ children }: { children: React.ReactNode }
           const mergedColors = { ...defaultModuleColors, ...data.module_colors };
           if (isMounted) {
             setColors(mergedColors);
+            localStorage.setItem('dailys_module_colors', JSON.stringify(mergedColors));
             applyColorsToDOM(mergedColors);
           }
         } else {
@@ -131,11 +140,13 @@ export function ModuleColorsProvider({ children }: { children: React.ReactNode }
   const updateColor = (moduleKey: string, color: string) => {
     const newColors = { ...colorsRef.current, [moduleKey]: color };
     setColors(newColors);
+    localStorage.setItem('dailys_module_colors', JSON.stringify(newColors));
     applyColorsToDOM(newColors);
   };
 
   const restoreDefaults = () => {
     setColors(defaultModuleColors);
+    localStorage.setItem('dailys_module_colors', JSON.stringify(defaultModuleColors));
     applyColorsToDOM(defaultModuleColors);
     // Setting state will trigger the useEffect debounce to save to Supabase
   };
