@@ -46,7 +46,7 @@ export function TaskModal({ themeColor, categories, initialDate, onClose, onSubm
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-6">
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-6">
       <div className="bg-[#12141C] border border-[#1E2230] w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-white">Nova Tarefa</h3>
