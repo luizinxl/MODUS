@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { PortfolioSummary } from '../../hooks/useInvestments';
 
 export interface EvolutionDataPoint {
@@ -39,37 +39,37 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ data, currentSummary,
 
   if (chartData.length === 0) {
     return (
-      <div className={`p-8 bg-[#161924] rounded-2xl border border-[#222736] text-center ${className}`}>
-        <p className="text-[#8E95A5] text-sm font-medium">Dados de evolução patrimonial insuficientes</p>
+      <div className={`p-6 bg-[#161924] rounded-2xl border border-[#232735] text-center flex items-center justify-center h-full ${className}`}>
+        <p className="text-[#8E95A5] text-sm font-medium">Dados insuficientes</p>
       </div>
     );
   }
 
+  // Define color based on profit/loss of the last point
+  const lastPoint = chartData[chartData.length - 1];
+  const isPositive = lastPoint.totalValue >= lastPoint.totalInvested;
+  const strokeColor = isPositive ? '#7C5CFC' : '#F43F5E';
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`p-6 bg-[#161924] rounded-2xl border border-[#222736] shadow-lg shadow-black/20 ${className}`}
+      className={`p-6 bg-[#161924] rounded-2xl border border-[#232735] shadow-lg shadow-black/20 flex flex-col h-full ${className}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
         <div>
-          <h3 className="font-semibold text-white text-base">Evolução do Patrimônio</h3>
-          <p className="text-xs text-[#8E95A5]">Comparativo entre valor acumulado de aportes e valor atual de mercado</p>
+          <h3 className="font-semibold text-white text-base">Performance do Portfólio</h3>
         </div>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="flex-1 w-full min-h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#7C5CFC" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#7C5CFC" stopOpacity={0.0} />
-              </linearGradient>
-              <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6B7280" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#6B7280" stopOpacity={0.0} />
+                <stop offset="5%" stopColor={strokeColor} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={strokeColor} stopOpacity={0.0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2332" />
@@ -90,11 +90,11 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ data, currentSummary,
                     <div className="bg-[#12141F] text-white text-xs p-3 rounded-xl shadow-xl border border-[#2B3145] min-w-[160px]">
                       <p className="text-[#8E95A5] font-semibold mb-2">{label}</p>
                       <div className="flex justify-between py-0.5">
-                        <span className="text-[#9B82FF]">Patrimônio:</span>
+                        <span className="text-[#9B82FF]">Valor:</span>
                         <strong>{formatCurrency(valCurrent)}</strong>
                       </div>
                       <div className="flex justify-between py-0.5">
-                        <span className="text-[#6B7280]">Total Aportado:</span>
+                        <span className="text-[#6B7280]">Aportado:</span>
                         <strong>{formatCurrency(valInv)}</strong>
                       </div>
                       <div className="border-t border-[#222736] mt-2 pt-1.5 flex justify-between">
@@ -109,33 +109,20 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ data, currentSummary,
                 return null;
               }}
             />
-            <Legend
-              verticalAlign="top"
-              align="right"
-              height={30}
-              formatter={(value) => (
-                <span className="text-xs text-[#8E95A5] font-medium">
-                  {value === 'totalValue' ? 'Patrimônio Atual' : 'Total Aportado'}
-                </span>
-              )}
-            />
             <Area
               type="monotone"
               dataKey="totalInvested"
               stroke="#6B7280"
-              strokeWidth={2}
+              strokeWidth={1.5}
               strokeDasharray="4 4"
-              fillOpacity={1}
-              fill="url(#colorInvested)"
-              isAnimationActive={true}
-              animationDuration={1000}
-              animationEasing="ease-out"
+              fill="none"
+              isAnimationActive={false}
             />
             <Area
               type="monotone"
               dataKey="totalValue"
-              stroke="#7C5CFC"
-              strokeWidth={2.5}
+              stroke={strokeColor}
+              strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorValue)"
               isAnimationActive={true}

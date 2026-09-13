@@ -93,7 +93,7 @@ export function Sidebar() {
     <>
     <aside className={clsx(
       "shrink-0 bg-[#12141C] flex flex-col justify-between h-full transition-all duration-300 relative border-r border-[#1E2230]",
-      isCollapsed ? "w-[90px]" : "w-[240px]"
+      isCollapsed ? "w-20" : "w-60"
     )}>
       {/* Botão de Toggle */}
       <button 
@@ -112,7 +112,7 @@ export function Sidebar() {
         {/* Módulos Container (Pill) */}
         <div className={clsx(
           "flex-1 flex flex-col transition-all duration-300 min-h-0 w-full",
-          isCollapsed ? "w-[64px]" : "w-[calc(100%-24px)]"
+          isCollapsed ? "w-16" : "w-[calc(100%-24px)]"
         )}>
           {!isCollapsed && (
             <div className="flex items-center justify-end px-4 pb-3 shrink-0">
@@ -142,7 +142,7 @@ export function Sidebar() {
                   className={({ isActive }) =>
                     clsx(
                       'flex items-center text-sm font-medium transition-all duration-200 shrink-0 group',
-                      isCollapsed ? 'justify-center w-[48px] h-[48px] rounded-full' : 'px-4 py-3 rounded-2xl gap-3 w-full',
+                      isCollapsed ? 'justify-center w-11 h-11 rounded-full' : 'px-4 py-2.5 rounded-2xl gap-3 w-full',
                       isActive ? '' : 'hover:bg-[#202535]'
                     )
                   }
@@ -178,7 +178,7 @@ export function Sidebar() {
       {/* Rodapé da Sidebar (Avatar e Config em Pill) */}
       <div className={clsx(
         "pb-6 pt-2 flex flex-col transition-all duration-300",
-        isCollapsed ? "w-[64px] mx-auto items-center" : "w-[calc(100%-24px)] mx-auto"
+        isCollapsed ? "w-16 mx-auto items-center" : "w-[calc(100%-24px)] mx-auto"
       )}>
         <div className={clsx(
           "bg-[#1A1D27]/80 border border-[#232735] flex flex-col gap-2 p-2",
@@ -190,7 +190,7 @@ export function Sidebar() {
             title={isCollapsed ? 'Configurações' : undefined}
             className={({ isActive }) => clsx(
               "flex items-center transition-colors shrink-0 group",
-              isCollapsed ? 'justify-center w-[48px] h-[48px] rounded-full' : 'px-4 py-3 rounded-2xl gap-3 w-full',
+              isCollapsed ? 'justify-center w-11 h-11 rounded-full' : 'px-4 py-2.5 rounded-2xl gap-3 w-full',
               isActive ? 'bg-[#7C5CFC] text-white shadow-lg' : 'text-[#8E95A5] hover:text-white hover:bg-[#202535]'
             )}
             style={({ isActive }) => isActive ? {
@@ -208,12 +208,12 @@ export function Sidebar() {
 
           <div className={clsx(
             "flex items-center bg-[#202535] transition-colors cursor-pointer shrink-0",
-            isCollapsed ? 'justify-center w-[48px] h-[48px] rounded-full p-1' : 'justify-between px-2 py-2 rounded-2xl gap-3 w-full'
+            isCollapsed ? 'justify-center w-11 h-11 rounded-full p-1' : 'justify-between px-2 py-1.5 rounded-2xl gap-3 w-full'
           )}>
             <div className="flex items-center gap-3">
               <div className={clsx(
                 "rounded-full bg-[#2A2F42] flex items-center justify-center overflow-hidden shrink-0",
-                isCollapsed ? "w-[40px] h-[40px]" : "w-[36px] h-[36px]"
+                isCollapsed ? "w-9 h-9" : "w-8 h-8"
               )}>
                 <img 
                   src="https://api.dicebear.com/7.x/avataaars/svg?seed=luiz" 
