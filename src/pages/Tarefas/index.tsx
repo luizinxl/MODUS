@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, SlidersHorizontal, Plus, PartyPopper, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useTasks, TaskFilter, TaskGroup } from '@/hooks/useTasks';
+import { useTasks, TaskFilter, TaskGroup, localDateStr } from '@/hooks/useTasks';
 import { useModuleColors, defaultModuleColors } from '@/hooks/useModuleColors';
 import { TaskCard } from './components/TaskCard';
 import { TaskModal } from './components/TaskModal';
@@ -189,12 +189,12 @@ export default function TarefasDashboard() {
                         onClick={() =>
                           openAddForm(
                             group.kind === 'today'
-                              ? new Date().toISOString().substring(0, 10)
+                              ? localDateStr()
                               : group.kind === 'tomorrow'
                               ? (() => {
                                   const d = new Date();
                                   d.setDate(d.getDate() + 1);
-                                  return d.toISOString().substring(0, 10);
+                                  return localDateStr(d);
                                 })()
                               : group.date
                           )
