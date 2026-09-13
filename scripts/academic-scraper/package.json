@@ -16,7 +16,9 @@
     "@supabase/supabase-js": "^2.45.4",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
-    "puppeteer": "^23.4.0"
+    "puppeteer": "^23.4.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",

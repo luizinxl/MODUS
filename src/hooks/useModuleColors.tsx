@@ -5,7 +5,7 @@ type ModuleColors = Record<string, string>;
 
 export const defaultModuleColors: ModuleColors = {
   inicio: '#7C5CFC',
-  tarefas: '#1C64EF',
+  tarefas: '#7C5CFC',
   financas: '#22C55E',
   investimentos: '#14B8A6',
   academico: '#F97316',
@@ -18,7 +18,7 @@ export const defaultModuleColors: ModuleColors = {
 export const routeToKeyMap: Record<string, string> = {
   '/': 'inicio',
   '/estudos': 'academico',
-  '/tarefas': 'casa',
+  '/tarefas': 'tarefas',
   '/compras': 'compras', // Wait, compras is not in the list, but it exists in sidebar. We can fallback to default. Let's just use what was requested.
   '/financas': 'financas',
   '/investimentos': 'investimentos',
