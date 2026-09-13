@@ -108,6 +108,7 @@ export const PortfolioAllocationChart: React.FC<Props> = ({ summary, className =
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                 <span className="text-[#8E95A5] truncate max-w-[80px]" title={item.name}>{item.name}</span>
+              </div>
               <div className="flex items-center gap-2 text-right">
                 <span className="text-white text-xs">{item.percent.toFixed(1)}%</span>
                 <span className="text-[#8E95A5] text-[10px] w-16">{formatCurrency(item.value)}</span>
