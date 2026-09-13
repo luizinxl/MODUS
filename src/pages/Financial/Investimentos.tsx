@@ -53,7 +53,7 @@ export default function Page() {
 
   // Emulate FinSight design with user data if available, else placeholders
   const topHoldings = useMemo(() => {
-    return [...positions].sort((a, b) => b.current_value - a.current_value).slice(0, 4);
+    return [...positions].sort((a, b) => b.currentValue - a.currentValue).slice(0, 4);
   }, [positions]);
 
   const marketWatchItems = useMemo(() => {
@@ -244,7 +244,7 @@ export default function Page() {
                </div>
              ) : (
                topHoldings.map((p) => {
-                 const pct = portfolioSummary.totalCurrentValue > 0 ? (p.current_value / portfolioSummary.totalCurrentValue) * 100 : 0;
+                 const pct = portfolioSummary.totalCurrentValue > 0 ? (p.currentValue / portfolioSummary.totalCurrentValue) * 100 : 0;
                  return (
                  <div key={p.id} className="flex justify-between items-center group">
                    <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export default function Page() {
                         <div className="h-full bg-[#10B981]" style={{ width: `${pct}%` }}></div>
                      </div>
                      <span className="text-[10px] text-[#8E95A5] w-8 text-right">{pct.toFixed(1)}%</span>
-                     <span className="text-xs font-semibold text-white w-16 text-right">{formatBRL(p.current_value)}</span>
+                     <span className="text-xs font-semibold text-white w-16 text-right">{formatBRL(p.currentValue)}</span>
                    </div>
                  </div>
                )})
