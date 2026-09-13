@@ -32,7 +32,7 @@ export async function getPluggyApiKey(): Promise<string> {
   const clientId = Deno.env.get('PLUGGY_CLIENT_ID');
   const clientSecret = Deno.env.get('PLUGGY_CLIENT_SECRET');
   if (!clientId || !clientSecret) {
-    throw new Error('PLUGGY_CLIENT_ID/SECRET n�o configurados nos secrets');
+    throw new Error('PLUGGY_CLIENT_ID/SECRET nao configurados nos secrets do Supabase');
   }
 
   return withRetry(async () => {
@@ -42,14 +42,17 @@ export async function getPluggyApiKey(): Promise<string> {
       body: JSON.stringify({ clientId, clientSecret }),
     });
     if (!res.ok) {
-      const err: Error & { status?: number } = new Error(`Falha ao autenticar na Pluggy: ${res.status}`);
+      const err: Error & { status?: number } = new Error(
+        `Falha ao autenticar na Pluggy: ${res.status}`
+      );
       err.status = res.status;
       throw err;
     }
     const data = await res.json();
     cachedApiKey = data.apiKey as string;
-    cachedApiKeyExpiresAt = now + 30 * 60 * 1000; // token da Pluggy dura ~1h, renova em 30min
-    return cachedApiKey;
+    // token da Pluggy dura ~1h — renova aos 30 min para segurança
+    cachedApiKeyExpiresAt = now + 30 * 60 * 1000;
+    return cachedApiKey!;
   });
 }
 
@@ -57,7 +60,7 @@ export async function pluggyFetch(
   path: string,
   apiKey: string,
   init: RequestInit = {},
-) {
+): Promise<Record<string, unknown>> {
   return withRetry(async () => {
     const res = await fetch(`${PLUGGY_BASE}${path}`, {
       ...init,
@@ -69,12 +72,36 @@ export async function pluggyFetch(
     });
     if (!res.ok) {
       const body = await res.text();
-      const err: Error & { status?: number } = new Error(`Pluggy ${path} erro ${res.status}: ${body}`);
+      const err: Error & { status?: number } = new Error(
+        `Pluggy ${path} erro ${res.status}: ${body}`
+      );
       err.status = res.status;
       throw err;
     }
     return res.json();
   });
+}
+
+/** Busca todas as paginas de um endpoint paginado do Pluggy */
+export async function pluggyFetchAll(
+  path: string,
+  apiKey: string,
+  pageSize = 500,
+): Promise<Record<string, unknown>[]> {
+  const allResults: Record<string, unknown>[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const sep = path.includes('?') ? '&' : '?';
+    const data = await pluggyFetch(`${path}${sep}pageSize=${pageSize}&page=${page}`, apiKey);
+    const results = (data.results as Record<string, unknown>[]) ?? [];
+    allResults.push(...results);
+    totalPages = (data.totalPages as number) ?? 1;
+    page++;
+  }
+
+  return allResults;
 }
 
 export { PLUGGY_BASE };
