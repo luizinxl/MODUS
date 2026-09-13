@@ -10,8 +10,11 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { getHistory, HistoryPoint } from '../../services/integrations/brapiService';
-
+export interface HistoryPoint {
+  date: number;
+  close: number;
+  volume: number;
+}
 interface Props {
   ticker: string;
   averagePrice?: number;
@@ -41,7 +44,7 @@ export const PositionHistoryChart: React.FC<Props> = ({ ticker, averagePrice, cl
     async function load() {
       if (!ticker) return;
       setLoading(true);
-      const data = await getHistory(ticker, range, range === '1mo' ? '1d' : '1wk');
+      const data: HistoryPoint[] = [];
       if (mounted) {
         setHistory(data);
         setLoading(false);

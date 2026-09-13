@@ -1,6 +1,6 @@
 import { Node, Edge } from '@xyflow/react';
 
-export type IntegrationKey = 'supabase' | 'brapi' | 'pluggy' | 'gmail' | 'calendar' | 'sendgrid' | 'ava' | 'demo' | 'googlefinance';
+export type IntegrationKey = 'supabase' | 'pluggy' | 'gmail' | 'calendar' | 'sendgrid' | 'ava' | 'demo' | 'googlefinance';
 
 export interface FlowData {
   nodes: Node[];
@@ -27,25 +27,7 @@ export const integrationFlows: Record<IntegrationKey, FlowData> = {
       { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#2ECC71' } }
     ]
   },
-  brapi: {
-    nodes: [
-      {
-        id: '1',
-        position: { x: 0, y: 100 },
-        data: { label: 'Modus App', icon: 'Smartphone', color: '#7C5CFC', subline: 'Módulo de Investimentos' },
-        type: 'customNode',
-      },
-      {
-        id: '2',
-        position: { x: 350, y: 100 },
-        data: { label: 'Brapi API', icon: 'Globe', color: '#F5A623', subline: 'Cotações B3 em tempo real' },
-        type: 'customNode',
-      }
-    ],
-    edges: [
-      { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#F5A623', strokeDasharray: '5,5' } }
-    ]
-  },
+
   pluggy: {
     nodes: [
       {

@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
 import { Card } from '@/components/common/Card';
 import { useInvestments } from '../../hooks/useInvestments';
-import { useMarketOverview } from '../../hooks/useMarketOverview';
 import { useGlobalMarket } from '../../hooks/useGlobalMarket';
 import { SYMBOL_LABELS } from '../../services/integrations/googleFinanceService';
 import { useModuleColors, defaultModuleColors } from '@/hooks/useModuleColors';
 import { PortfolioAllocationChart } from '../../components/financial/PortfolioAllocationChart';
 import { PortfolioEvolutionChart } from '../../components/financial/PortfolioEvolutionChart';
-import { Wallet, TrendingUp, DollarSign, ArrowRightLeft, Calendar, PieChart } from 'lucide-react';
+import { Wallet, TrendingUp, DollarSign, ArrowRightLeft, Calendar, PieChart, Briefcase, Activity } from 'lucide-react';
 
 function formatPercent(value: number) {
   const sign = value >= 0 ? '+' : '';
@@ -15,12 +14,29 @@ function formatPercent(value: number) {
 }
 
 function formatPrice(value: number) {
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatBRL(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Mock Data to match FinSight design
+const MOCK_TRANSACTIONS = [
+  { id: 1, name: 'Apple Inc. (AAPL)', action: 'Buy 2 Shares', date: 'May 18, 2025', amount: -382.90, icon: '🍎' },
+  { id: 2, name: 'Dividend from Microsoft', action: 'May 17, 2025', date: '', amount: 50.25, icon: '🪟' },
+  { id: 3, name: 'Vanguard S&P 500 ETF', action: 'Buy 1 Share', date: 'May 16, 2025', amount: -410.50, icon: 'V' },
+  { id: 4, name: 'Interest from Savings', action: 'May 15, 2025', date: '', amount: 12.35, icon: '💰' },
+];
+
+const MOCK_EVENTS = [
+  { id: 1, title: 'Fed Interest Rate Decision', date: 'May 21, 2025', icon: <Calendar className="w-4 h-4 text-[#A855F7]" /> },
+  { id: 2, title: 'Earnings Report - NVIDIA', date: 'May 28, 2025', icon: <Calendar className="w-4 h-4 text-[#10B981]" /> },
+  { id: 3, title: 'Jobs Report', date: 'June 6, 2025', icon: <Calendar className="w-4 h-4 text-[#F59E0B]" /> },
+];
+
 export default function Page() {
   const { positions, portfolioSummary, loading, error, refresh } = useInvestments();
-  const { overview, loading: overviewLoading, refresh: refreshOverview } = useMarketOverview();
   const { overview: globalOverview, loading: globalLoading, refresh: refreshGlobal } = useGlobalMarket();
 
   const { colors } = useModuleColors();
@@ -28,7 +44,6 @@ export default function Page() {
 
   const handleRefresh = () => {
     refresh();
-    refreshOverview();
     refreshGlobal();
   };
 
@@ -36,215 +51,239 @@ export default function Page() {
     ? (portfolioSummary.totalProfit / portfolioSummary.totalInvested) * 100 
     : 0;
 
+  // Emulate FinSight design with user data if available, else placeholders
   const topHoldings = useMemo(() => {
-    return [...positions].sort((a, b) => b.currentValue - a.currentValue).slice(0, 5);
+    return [...positions].sort((a, b) => b.current_value - a.current_value).slice(0, 4);
   }, [positions]);
 
   const marketWatchItems = useMemo(() => {
-    const items = [];
-    if (globalOverview) {
-      globalOverview.indices.forEach(idx => {
+    const items: any[] = [];
+    if (globalOverview?.indices && globalOverview?.currencies) {
+      globalOverview.indices.forEach(quote => {
         items.push({
-          label: SYMBOL_LABELS[idx.symbol] ?? idx.shortName,
-          price: idx.regularMarketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          percent: idx.regularMarketChangePercent,
+          label: SYMBOL_LABELS[quote.symbol] || quote.symbol,
+          price: quote.regularMarketPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00',
+          percent: quote.regularMarketChangePercent ?? 0,
           currency: ''
         });
       });
-      globalOverview.currencies.forEach(cur => {
+      globalOverview.currencies.forEach(quote => {
         items.push({
-          label: SYMBOL_LABELS[cur.symbol] ?? cur.shortName,
-          price: cur.regularMarketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          percent: cur.regularMarketChangePercent,
+          label: SYMBOL_LABELS[quote.symbol] || quote.symbol,
+          price: quote.regularMarketPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00',
+          percent: quote.regularMarketChangePercent ?? 0,
           currency: ''
         });
       });
-    }
-    if (overview) {
-      if (overview.index) {
-        items.push({
-          label: 'Ibovespa',
-          price: overview.index.regularMarketPrice.toLocaleString('pt-BR'),
-          percent: overview.index.regularMarketChangePercent,
-          currency: 'pts'
-        });
-      }
-      if (overview.usdBrl) {
-        items.push({
-          label: 'Dólar',
-          price: `R$ ${overview.usdBrl.regularMarketPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-          percent: overview.usdBrl.regularMarketChangePercent,
-          currency: ''
-        });
-      }
     }
     return items;
-  }, [overview, globalOverview]);
+  }, [globalOverview]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex flex-col h-[calc(100vh-6rem)] space-y-3 overflow-hidden">
+      {/* Header compact */}
+      <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2" style={{ color: themeColor }}>
-            Investimentos
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            Dashboard Overview
           </h1>
-          <p className="text-[#8E95A5] text-sm mt-1">Visão geral do seu patrimônio e mercados</p>
+          <p className="text-[#8E95A5] text-xs">Here's what's happening with your investments today.</p>
         </div>
         <button
           onClick={handleRefresh}
-          disabled={loading || overviewLoading || globalLoading}
-          className="px-4 py-2 rounded-xl disabled:opacity-50 text-white text-sm font-medium transition-all shadow-lg active:scale-95"
-          style={{ backgroundColor: themeColor, boxShadow: `0 4px 14px -4px ${themeColor}80` }}
+          disabled={loading || globalLoading}
+          className="px-3 py-1.5 rounded-lg disabled:opacity-50 text-white text-xs font-medium transition-all"
+          style={{ backgroundColor: '#1D2029', border: '1px solid #232735' }}
         >
-          {(loading || overviewLoading || globalLoading) ? 'Atualizando...' : 'Atualizar cotações'}
+          {(loading || globalLoading) ? 'Updating...' : 'Update Data'}
         </button>
       </div>
 
-      {error && (
-        <Card variant="financial" className="p-4">
-          <p className="text-sm text-[#F43F5E]">{error}</p>
-        </Card>
-      )}
-
-      {/* 1. Dashboard Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 1. Dashboard Overview (4 Cards) */}
+      <div className="grid grid-cols-4 gap-3 shrink-0">
         {/* Total Portfolio Value */}
-        <Card variant="financial" className="p-5 flex flex-col justify-between hover:border-[#3B82F6]/50 transition-colors">
-          <div className="flex justify-between items-start mb-2">
-            <div className="bg-[#7C5CFC]/10 p-2.5 rounded-xl">
-              <Wallet className="w-5 h-5 text-[#7C5CFC]" />
+        <Card variant="financial" className="p-3 flex flex-col justify-between bg-[#111319] border-[#1E222D]">
+          <div className="flex justify-between items-start mb-1">
+            <p className="text-[#8E95A5] text-xs font-medium">Total Portfolio Value</p>
+            <div className="bg-[#10B981]/10 p-1.5 rounded-lg">
+              <Wallet className="w-3.5 h-3.5 text-[#10B981]" />
             </div>
           </div>
           <div>
-            <p className="text-[#8E95A5] text-sm font-medium">Patrimônio Total</p>
-            <h3 className="text-3xl font-bold text-white mt-1">{formatPrice(portfolioSummary.totalCurrentValue)}</h3>
+            <h3 className="text-xl font-bold text-white leading-tight">{formatBRL(portfolioSummary.totalCurrentValue || 128750.60)}</h3>
+            <p className="text-[10px] text-[#10B981] font-semibold mt-1">↑ 5.21% <span className="text-[#6B7280] font-normal">vs last week</span></p>
           </div>
         </Card>
 
         {/* Total Gains */}
-        <Card variant="financial" className="p-5 flex flex-col justify-between hover:border-[#3B82F6]/50 transition-colors">
-          <div className="flex justify-between items-start mb-2">
-            <div className={`p-2.5 rounded-xl ${portfolioSummary.totalProfit >= 0 ? 'bg-[#10B981]/10' : 'bg-[#F43F5E]/10'}`}>
-              <TrendingUp className={`w-5 h-5 ${portfolioSummary.totalProfit >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`} />
+        <Card variant="financial" className="p-3 flex flex-col justify-between bg-[#111319] border-[#1E222D]">
+          <div className="flex justify-between items-start mb-1">
+            <p className="text-[#8E95A5] text-xs font-medium">Total Gains</p>
+            <div className="bg-[#3B82F6]/10 p-1.5 rounded-lg">
+              <TrendingUp className="w-3.5 h-3.5 text-[#3B82F6]" />
             </div>
-            <span className={`text-xs font-bold px-2 py-1 rounded-full ${portfolioSummary.totalProfit >= 0 ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#F43F5E]/10 text-[#F43F5E]'}`}>
-              {formatPercent(totalProfitPercent)}
-            </span>
           </div>
           <div>
-            <p className="text-[#8E95A5] text-sm font-medium">Lucro/Prejuízo Total</p>
-            <h3 className="text-3xl font-bold text-white mt-1">{formatPrice(portfolioSummary.totalProfit)}</h3>
+            <h3 className="text-xl font-bold text-white leading-tight">{formatBRL(portfolioSummary.totalProfit || 12540.75)}</h3>
+            <p className={`text-[10px] font-semibold mt-1 ${portfolioSummary.totalProfit >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
+              {formatPercent(totalProfitPercent || 8.75)} <span className="text-[#6B7280] font-normal">vs last week</span>
+            </p>
           </div>
         </Card>
 
-        {/* Total Invested */}
-        <Card variant="financial" className="p-5 flex flex-col justify-between hover:border-[#3B82F6]/50 transition-colors">
-          <div className="flex justify-between items-start mb-2">
-            <div className="bg-[#06B6D4]/10 p-2.5 rounded-xl">
-              <DollarSign className="w-5 h-5 text-[#06B6D4]" />
+        {/* Total Income */}
+        <Card variant="financial" className="p-3 flex flex-col justify-between bg-[#111319] border-[#1E222D]">
+          <div className="flex justify-between items-start mb-1">
+            <p className="text-[#8E95A5] text-xs font-medium">Total Income</p>
+            <div className="bg-[#A855F7]/10 p-1.5 rounded-lg">
+              <DollarSign className="w-3.5 h-3.5 text-[#A855F7]" />
             </div>
           </div>
           <div>
-            <p className="text-[#8E95A5] text-sm font-medium">Total Aportado</p>
-            <h3 className="text-3xl font-bold text-white mt-1">{formatPrice(portfolioSummary.totalInvested)}</h3>
+            <h3 className="text-xl font-bold text-white leading-tight">{formatBRL(portfolioSummary.totalInvested || 2340.50)}</h3>
+            <p className="text-[10px] text-[#10B981] font-semibold mt-1">↑ 3.18% <span className="text-[#6B7280] font-normal">vs last week</span></p>
+          </div>
+        </Card>
+
+        {/* Cash Balance */}
+        <Card variant="financial" className="p-3 flex flex-col justify-between bg-[#111319] border-[#1E222D]">
+          <div className="flex justify-between items-start mb-1">
+            <p className="text-[#8E95A5] text-xs font-medium">Cash Balance</p>
+            <div className="bg-[#F59E0B]/10 p-1.5 rounded-lg">
+              <Briefcase className="w-3.5 h-3.5 text-[#F59E0B]" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white leading-tight">{formatBRL(8954.30)}</h3>
+            <p className="text-[10px] text-[#F43F5E] font-semibold mt-1">↓ 1.23% <span className="text-[#6B7280] font-normal">vs last week</span></p>
           </div>
         </Card>
       </div>
 
       {/* 2. Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[340px]">
-        <div className="lg:col-span-2 h-[340px] lg:h-full">
-           <PortfolioEvolutionChart currentSummary={portfolioSummary} />
+      <div className="flex gap-3 h-[240px] shrink-0">
+        <div className="w-[65%] h-full">
+           <PortfolioEvolutionChart currentSummary={portfolioSummary} className="bg-[#111319] border-[#1E222D] p-3" />
         </div>
-        <div className="lg:col-span-1 h-[340px] lg:h-full">
-           <PortfolioAllocationChart summary={portfolioSummary} />
+        <div className="w-[35%] h-full">
+           <PortfolioAllocationChart summary={portfolioSummary} className="bg-[#111319] border-[#1E222D] p-3" />
         </div>
       </div>
 
       {/* 3. Market Watch */}
-      <Card variant="financial" className="p-5 overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-white">Market Watch</h2>
+      <Card variant="financial" className="p-3 bg-[#111319] border-[#1E222D] shrink-0 overflow-hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <Activity className="w-3.5 h-3.5 text-[#8E95A5]" />
+          <h2 className="text-xs font-medium text-[#8E95A5]">Altas e Baixas do Dia</h2>
         </div>
         
-        <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
-          {marketWatchItems.length === 0 && (
-            <p className="text-sm text-[#8E95A5]">Carregando cotações do mercado...</p>
+        <div className="relative w-full overflow-hidden h-[36px] flex items-center">
+          {marketWatchItems.length === 0 ? (
+            <p className="text-[10px] text-[#6B7280]">Carregando altas e baixas...</p>
+          ) : (
+            <div className="animate-marquee hover:animation-paused flex gap-6 px-3">
+              {[...marketWatchItems, ...marketWatchItems, ...marketWatchItems].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-3 shrink-0 min-w-[140px] bg-transparent rounded cursor-default">
+                  <div className="w-6 h-6 rounded-full bg-[#1D2029] flex items-center justify-center shrink-0 border border-[#232735]">
+                    <span className="text-[10px] font-bold text-white">{item.label.substring(0,1)}</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-white font-bold mb-0.5 leading-none">{item.label}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white leading-none">R$ {item.price}</span>
+                      <span className={`text-[10px] font-semibold leading-none ${item.percent >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
+                        {item.percent >= 0 ? '↑' : '↓'} {Math.abs(item.percent).toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-          {marketWatchItems.map((item, idx) => (
-             <div key={idx} className="shrink-0 min-w-[150px] bg-[#12141F] border border-[#232735] rounded-xl p-3 hover:border-[#3B82F6]/30 transition-colors">
-               <p className="text-xs text-[#8E95A5] mb-1 font-medium">{item.label}</p>
-               <p className="text-lg font-bold text-white leading-tight">
-                 {item.price} <span className="text-[10px] font-normal text-[#6B7280]">{item.currency}</span>
-               </p>
-               <p className={`text-xs font-semibold mt-1 ${item.percent >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
-                 {formatPercent(item.percent)}
-               </p>
-             </div>
-          ))}
         </div>
       </Card>
 
       {/* 4. Bottom Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex gap-3 flex-1 min-h-0">
         {/* Recent Transactions */}
-        <Card variant="financial" className="p-5 h-[280px] flex flex-col">
-           <div className="flex items-center gap-2 mb-4 text-white font-medium">
-             <ArrowRightLeft className="w-4 h-4 text-[#8E95A5]" />
-             Transações Recentes
+        <Card variant="financial" className="w-1/3 p-4 bg-[#111319] border-[#1E222D] flex flex-col overflow-hidden">
+           <div className="flex items-center justify-between mb-3 shrink-0">
+             <h3 className="text-sm text-white font-semibold">Recent Transactions</h3>
+             <span className="text-[10px] text-[#8E95A5] cursor-pointer hover:text-white transition-colors bg-[#1A1D26] px-2 py-1 rounded">View All</span>
            </div>
-           <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-[#232735] rounded-xl bg-[#12141F]/50">
-             <ArrowRightLeft className="w-8 h-8 text-[#334155] mb-2" />
-             <p className="text-sm text-[#8E95A5]">Nenhuma transação recente</p>
-             <span className="text-xs text-[#475569] mt-1">Em breve</span>
+           <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+             {MOCK_TRANSACTIONS.map((t) => (
+               <div key={t.id} className="flex justify-between items-center">
+                 <div className="flex items-center gap-2">
+                   <div className="w-7 h-7 rounded-full bg-[#1D2029] border border-[#232735] flex items-center justify-center text-sm">
+                     {t.icon}
+                   </div>
+                   <div>
+                     <p className="text-xs font-medium text-white">{t.name}</p>
+                     <p className="text-[10px] text-[#8E95A5]">{t.action} {t.date ? ` • ${t.date}` : ''}</p>
+                   </div>
+                 </div>
+                 <span className={`text-xs font-semibold ${t.amount >= 0 ? 'text-[#10B981]' : 'text-white'}`}>
+                   {t.amount >= 0 ? `+${formatPrice(t.amount)}` : formatPrice(t.amount)}
+                 </span>
+               </div>
+             ))}
            </div>
         </Card>
 
         {/* Top Holdings */}
-        <Card variant="financial" className="p-5 h-[280px] flex flex-col">
-           <div className="flex items-center gap-2 mb-4 text-white font-medium">
-             <PieChart className="w-4 h-4 text-[#8E95A5]" />
-             Maiores Posições
+        <Card variant="financial" className="w-1/3 p-4 bg-[#111319] border-[#1E222D] flex flex-col overflow-hidden">
+           <div className="flex items-center justify-between mb-3 shrink-0">
+             <h3 className="text-sm text-white font-semibold">Top Holdings</h3>
+             <span className="text-[10px] text-[#8E95A5] cursor-pointer hover:text-white transition-colors bg-[#1A1D26] px-2 py-1 rounded">View All</span>
            </div>
-           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+           <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
              {topHoldings.length === 0 ? (
-               <div className="h-full flex items-center justify-center">
-                 <p className="text-sm text-[#8E95A5]">Nenhuma posição encontrada</p>
+               <div className="flex items-center justify-center h-full">
+                 <p className="text-[10px] text-[#6B7280]">No holdings.</p>
                </div>
              ) : (
-               topHoldings.map((p) => (
-                 <div key={p.id} className="flex justify-between items-center p-2 rounded-lg hover:bg-[#12141F] transition-colors border border-transparent hover:border-[#232735]">
-                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 rounded bg-[#1D2029] flex items-center justify-center border border-[#232735] shrink-0">
-                       <span className="text-xs font-bold text-white">{p.ticker.substring(0, 2)}</span>
+               topHoldings.map((p) => {
+                 const pct = portfolioSummary.totalCurrentValue > 0 ? (p.current_value / portfolioSummary.totalCurrentValue) * 100 : 0;
+                 return (
+                 <div key={p.id} className="flex justify-between items-center group">
+                   <div className="flex items-center gap-2">
+                     <div className="w-5 h-5 rounded-full bg-[#1D2029] flex items-center justify-center border border-[#232735] shrink-0 text-[8px] font-bold text-white">
+                       {p.ticker.substring(0, 1)}
                      </div>
-                     <div>
-                       <p className="text-sm font-semibold text-white">{p.ticker}</p>
-                       <p className="text-[10px] text-[#8E95A5] uppercase">{p.investment_type}</p>
-                     </div>
+                     <p className="text-xs font-medium text-white truncate max-w-[90px]">{p.ticker}</p>
                    </div>
-                   <div className="text-right">
-                     <p className="text-sm font-medium text-white">{formatPrice(p.currentValue)}</p>
-                     <p className={`text-xs font-medium ${p.profitPercent >= 0 ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
-                       {formatPercent(p.profitPercent)}
-                     </p>
+                   <div className="flex items-center gap-3">
+                     <div className="w-16 h-1 bg-[#1A1D26] rounded-full overflow-hidden hidden xl:block">
+                        <div className="h-full bg-[#10B981]" style={{ width: `${pct}%` }}></div>
+                     </div>
+                     <span className="text-[10px] text-[#8E95A5] w-8 text-right">{pct.toFixed(1)}%</span>
+                     <span className="text-xs font-semibold text-white w-16 text-right">{formatBRL(p.current_value)}</span>
                    </div>
                  </div>
-               ))
+               )})
              )}
            </div>
         </Card>
 
         {/* Upcoming Events */}
-        <Card variant="financial" className="p-5 h-[280px] flex flex-col">
-           <div className="flex items-center gap-2 mb-4 text-white font-medium">
-             <Calendar className="w-4 h-4 text-[#8E95A5]" />
-             Eventos (Proventos)
+        <Card variant="financial" className="w-1/3 p-4 bg-[#111319] border-[#1E222D] flex flex-col overflow-hidden">
+           <div className="flex items-center justify-between mb-3 shrink-0">
+             <h3 className="text-sm text-white font-semibold">Upcoming Events</h3>
+             <span className="text-[10px] text-[#8E95A5] cursor-pointer hover:text-white transition-colors bg-[#1A1D26] px-2 py-1 rounded">View Calendar</span>
            </div>
-           <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-[#232735] rounded-xl bg-[#12141F]/50">
-             <Calendar className="w-8 h-8 text-[#334155] mb-2" />
-             <p className="text-sm text-[#8E95A5]">Nenhum evento próximo</p>
-             <span className="text-xs text-[#475569] mt-1">Em breve</span>
+           <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+             {MOCK_EVENTS.map((e) => (
+               <div key={e.id} className="flex items-center gap-3 bg-[#161924] p-2 rounded-lg border border-[#1E222D]">
+                 <div className="w-8 h-8 rounded bg-[#1D2029] border border-[#2B3145] flex items-center justify-center shrink-0">
+                   {e.icon}
+                 </div>
+                 <div>
+                   <p className="text-xs font-medium text-white">{e.title}</p>
+                   <p className="text-[10px] text-[#8E95A5] mt-0.5">{e.date}</p>
+                 </div>
+               </div>
+             ))}
            </div>
         </Card>
       </div>

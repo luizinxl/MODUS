@@ -260,7 +260,6 @@ export default function Page() {
         </div>
 
         <IntegrationRow name="Supabase" status="ok" detail="Banco de dados e autenticação" onClick={() => setSelectedFlow('supabase')} />
-        <IntegrationRow name="brapi (cotações)" status="pendente" detail="Sem token configurado — dólar e maiores altas/baixas ficam vazios" onClick={() => setSelectedFlow('brapi')} />
         <IntegrationRow name="Google Finance" status="nao_configurado" detail="Integração para cotações e portfólio global" onClick={() => setSelectedFlow('googlefinance')} />
         <IntegrationRow name="Pluggy (Open Finance)" status="nao_configurado" detail="Conecte pelo card na aba Início ou Investimentos" onClick={() => setSelectedFlow('pluggy')} />
         <IntegrationRow name="Gmail (leitura de faturas)" status="nao_configurado" detail="Precisa de credenciais OAuth do Google Cloud" onClick={() => setSelectedFlow('gmail')} />

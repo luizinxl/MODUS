@@ -39,8 +39,8 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ data, currentSummary,
 
   if (chartData.length === 0) {
     return (
-      <div className={`p-6 bg-[#161924] rounded-2xl border border-[#232735] text-center flex items-center justify-center h-full ${className}`}>
-        <p className="text-[#8E95A5] text-sm font-medium">Dados insuficientes</p>
+      <div className={`p-3 bg-[#111319] rounded-xl border border-[#1E222D] text-center flex items-center justify-center h-full ${className}`}>
+        <p className="text-[#8E95A5] text-xs font-medium">Dados insuficientes</p>
       </div>
     );
   }
@@ -55,15 +55,15 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ data, currentSummary,
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`p-6 bg-[#161924] rounded-2xl border border-[#232735] shadow-lg shadow-black/20 flex flex-col h-full ${className}`}
+      className={`p-3 bg-[#111319] rounded-xl border border-[#1E222D] flex flex-col h-full ${className}`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
         <div>
-          <h3 className="font-semibold text-white text-base">Performance do Portfólio</h3>
+          <h3 className="font-semibold text-white text-sm">Portfolio Performance</h3>
         </div>
       </div>
 
-      <div className="flex-1 w-full min-h-[200px]">
+      <div className="flex-1 w-full min-h-[140px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
             <defs>
@@ -73,12 +73,12 @@ export const PortfolioEvolutionChart: React.FC<Props> = ({ data, currentSummary,
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2332" />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} axisLine={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#6B7280' }} tickLine={false} axisLine={false} />
             <YAxis
-              tick={{ fontSize: 11, fill: '#6B7280' }}
+              tick={{ fontSize: 9, fill: '#6B7280' }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(val) => `R$${(val / 1000).toFixed(0)}k`}
+              tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
             />
             <Tooltip
               content={({ active, payload, label }) => {

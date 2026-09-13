@@ -163,37 +163,36 @@ async function attemptLogin(page: Page): Promise<boolean> {
     log(`Página de autenticação atingida: ${page.url()}`);
 
     // Garantir que o campo de username no IdP está preenchido
-    const idpUsernameVal = await page.$eval('#username', (el: any) => el.value).catch(() => '');
-    if (!idpUsernameVal) {
-      log('Preenchendo username no formulário IdP...');
-      await page.$eval('#username', (el: any, val: string) => { el.value = val; }, user);
-    }
-
-    // Digitar a senha
-    log('Digitando senha no IdP...');
-    await page.type('input[type="password"]', pass, { delay: 30 });
-
-    // Clicar em Entrar
-    log('Enviando credenciais...');
-    const submitBtn = await page.$('button[type="submit"], input[type="submit"], .btn-primary');
-    if (submitBtn) {
-      try {
-        await submitBtn.click();
-      } catch (err) {
-        log('Botão não clicável, forçando clique via JS...');
-        await page.evaluate((btn) => (btn as HTMLElement).click(), submitBtn);
+    log('Garantindo username no formulário IdP...');
+    await page.evaluate((userVal) => {
+      const u = document.querySelector('input#username') as HTMLInputElement;
+      if (u) {
+        u.value = userVal;
+        u.dispatchEvent(new Event('input', { bubbles: true }));
+        u.dispatchEvent(new Event('change', { bubbles: true }));
       }
-    } else {
-      await page.keyboard.press('Enter');
-    }
+    }, user);
 
-    // Aguardar ciclo de redirecionamento SAML POST de volta para o AVA
-    log('Aguardando redirecionamento SAML...');
-    try {
-      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30_000 });
-    } catch {
-      // Pode já ter finalizado a navegação
-    }
+    // Digitar a senha no IdP de forma robusta
+    log('Digitando senha no IdP...');
+    await page.evaluate((passVal) => {
+      const p = document.querySelector('input[type="password"]') as HTMLInputElement;
+      if (p) {
+        p.value = passVal;
+        p.dispatchEvent(new Event('input', { bubbles: true }));
+        p.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }, pass);
+
+    // Clicar em Entrar via form submit nativo
+    log('Enviando credenciais...');
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30_000 }).catch(() => {}),
+      page.evaluate(() => {
+        const form = document.querySelector('form[name="f"]') as HTMLFormElement;
+        if (form) form.submit();
+      })
+    ]);
     await new Promise((r) => setTimeout(r, 4000));
 
     // Alguns fluxos SSO inserem um prompt extra ("Continuar conectado?")

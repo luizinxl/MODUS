@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
-import { getQuotes, Quote } from '../services/integrations/brapiService';
 
 export type AssetType = 'STOCK' | 'FII' | 'FIXED_INCOME' | 'CRYPTO' | 'BDR' | 'ETF' | 'FUND';
 
@@ -63,17 +62,11 @@ export function useInvestments() {
         return;
       }
 
-      const b3Tickers = items.filter((i) => B3_TYPES.includes(i.investment_type) && i.ticker).map((i) => i.ticker);
-      const quotesArr = b3Tickers.length ? await getQuotes(b3Tickers) : [];
-      const quotesMap = new Map<string, Quote>(quotesArr.map((q) => [q.symbol.toUpperCase(), q]));
-
       let totalValue = 0;
       let totalInvested = 0;
 
       const withPrices = items.map((item) => {
-        const quote = quotesMap.get((item.ticker || '').toUpperCase());
-        const isB3 = B3_TYPES.includes(item.investment_type);
-        const currentPrice = isB3 && quote ? quote.regularMarketPrice : Number(item.average_price);
+        const currentPrice = Number(item.average_price);
         const quantity = Number(item.quantity) || 0;
         const avgPrice = Number(item.average_price) || 0;
         const totalCost = quantity * avgPrice;
@@ -87,7 +80,7 @@ export function useInvestments() {
           totalCost,
           profit: currentValue - totalCost,
           profitPercent: totalCost > 0 ? ((currentValue - totalCost) / totalCost) * 100 : 0,
-          dailyChangePercent: quote?.regularMarketChangePercent ?? 0,
+          dailyChangePercent: 0,
           allocationPercent: 0,
         };
       });
