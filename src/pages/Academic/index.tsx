@@ -142,10 +142,10 @@ export default function AcademicDashboard() {
       )}
 
       {/* Main Layout: Unified Dashboard Panel */}
-      <div className="bg-[#12141C] border border-[#1E2230] rounded-3xl p-6 flex flex-col lg:flex-row gap-8 flex-1 min-h-[700px]">
+      <div className="bg-[#12141C] border border-[#1E2230] rounded-3xl p-6 flex flex-col lg:flex-row gap-8 flex-1 h-[700px]">
         {/* Calendar Area (Left - Takes ~65%) */}
-        <div className="w-full lg:w-[65%] shrink-0 flex flex-col min-h-0">
-          <CalendarGrid 
+        <div className="w-full lg:w-[65%] shrink-0 flex flex-col min-h-0 h-full">
+          <CalendarGrid
             currentDate={currentMonth}
             onMonthChange={handleMonthChange}
             selectedDate={selectedDate}
@@ -154,12 +154,12 @@ export default function AcademicDashboard() {
             tasks={tasks} // We pass tasks down so CalendarGrid can render task chips inside the cells
           />
         </div>
-        
+
         {/* Scheduled / Daily Panel Area (Right - Takes ~35%) */}
-        <div className="w-full lg:w-[35%] flex flex-col border-t lg:border-t-0 lg:border-l border-[#1E2230] pt-8 lg:pt-0 lg:pl-8">
-          <DailyPanel 
-            selectedDate={selectedDate} 
-            tasks={selectedDayTasks} 
+        <div className="w-full lg:w-[35%] flex flex-col min-h-0 h-full border-t lg:border-t-0 lg:border-l border-[#1E2230] pt-8 lg:pt-0 lg:pl-8">
+          <DailyPanel
+            selectedDate={selectedDate}
+            tasks={selectedDayTasks}
           />
         </div>
       </div>
