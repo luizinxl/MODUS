@@ -13,7 +13,7 @@ import {
   FilterType,
   Transaction,
 } from '@/hooks/useTransactions';
-import { getConnectToken, syncPluggyItem } from '@/services/integrations/pluggyClient';
+import { getConnectToken, savePluggyConnection, syncPluggyItem } from '@/services/integrations/pluggyClient';
 
 // ----------------------------------------------------------------
 // Helpers
@@ -199,22 +199,56 @@ export default function Financas() {
   }
 
   // Conectar Pluggy Widget
-  async function handleConnect() {
+  async function handleConnect(itemId?: string) {
+    setSyncMsg(null);
     try {
-      const token = await getConnectToken();
-      // Abre o widget do Pluggy via CDN
-      const script = document.createElement('script');
-      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.js';
-      script.onload = () => {
+      const token = await getConnectToken(itemId);
+
+      const openWidget = () => {
         // @ts-expect-error — SDK do Pluggy injetado no window
         window.PluggyConnect({
           connectToken: token,
-          onSuccess: () => { refetch(); },
+          // onSuccess recebe { item } com id, connector, status
+          onSuccess: async (data: { item: { id: string; connector?: { name?: string; type?: string; id?: number }; status?: string } }) => {
+            setSyncMsg('Conexão estabelecida! Sincronizando transações…');
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) throw new Error('Não autenticado');
+
+              // 1. Salva a conexão no banco
+              const connectionId = await savePluggyConnection(data.item.id, data.item);
+
+              // 2. Dispara sync imediato
+              const result = await syncPluggyItem(user.id, connectionId, data.item.id);
+              setSyncMsg(
+                `✓ Sincronizado! ${result.transactions.created} transações importadas.`
+              );
+              refetch();
+            } catch (e) {
+              setSyncMsg(`Erro ao sincronizar: ${e instanceof Error ? e.message : 'falha'}`);
+            }
+          },
+          onError: (err: { message?: string }) => {
+            setSyncMsg(`Erro na conexão: ${err?.message ?? 'falha no widget'}`);
+          },
         });
       };
+
+      // Se o SDK já foi carregado, abre direto
+      // @ts-expect-error — SDK do Pluggy injetado no window
+      if (typeof window.PluggyConnect === 'function') {
+        openWidget();
+        return;
+      }
+
+      // Caso contrário, injeta o script e abre quando carregar
+      const script = document.createElement('script');
+      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.js';
+      script.onload = openWidget;
+      script.onerror = () => setSyncMsg('Erro ao carregar widget do Pluggy.');
       document.head.appendChild(script);
     } catch (e) {
-      console.error('Erro ao abrir widget Pluggy:', e);
+      setSyncMsg(`Erro: ${e instanceof Error ? e.message : 'falha ao conectar'}`);
     }
   }
 
@@ -234,18 +268,28 @@ export default function Financas() {
           <p className="text-[#8E95A5] text-sm mt-1">Contas, cartões, orçamento e fluxo de caixa.</p>
         </div>
         <div className="flex gap-2">
-          {hasConnections ? (
+          {hasConnections && (
+            <>
+              <button
+                onClick={() => void handleConnect()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#171A24] border border-[#2A2D3E] hover:border-[#7C5CFC] text-[#7C5CFC] text-sm font-medium transition-colors"
+              >
+                <LinkIcon size={14} />
+                + Conta
+              </button>
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7C5CFC] hover:bg-[#6B4FD8] text-white text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+                {syncing ? 'Sincronizando…' : 'Sincronizar'}
+              </button>
+            </>
+          )}
+          {!hasConnections && (
             <button
-              onClick={handleSync}
-              disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7C5CFC] hover:bg-[#6B4FD8] text-white text-sm font-medium transition-colors disabled:opacity-60"
-            >
-              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-              {syncing ? 'Sincronizando…' : 'Sincronizar'}
-            </button>
-          ) : (
-            <button
-              onClick={handleConnect}
+              onClick={() => void handleConnect()}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#171A24] border border-[#2A2D3E] hover:border-[#7C5CFC] text-[#7C5CFC] text-sm font-medium transition-colors"
             >
               <LinkIcon size={14} />
@@ -261,6 +305,31 @@ export default function Financas() {
         </div>
       )}
 
+      {/* Contas conectadas */}
+      {hasConnections && (
+        <div className="flex flex-wrap gap-2">
+          {connections.map((conn) => (
+            <div key={conn.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#171A24] border border-[#2A2D3E]">
+              <span className={`w-2 h-2 rounded-full ${conn.status === 'UPDATED' ? 'bg-[#2ECC71]' : conn.status === 'LOGIN_ERROR' ? 'bg-[#F43F5E]' : 'bg-yellow-400'}`} />
+              <span className="text-xs text-white font-medium">{conn.institution_name}</span>
+              {conn.status === 'LOGIN_ERROR' && (
+                <button
+                  onClick={() => handleConnect(conn.pluggy_item_id)}
+                  className="text-[10px] text-[#7C5CFC] hover:underline"
+                >
+                  Reconectar
+                </button>
+              )}
+              {conn.last_sync_at && (
+                <span className="text-[10px] text-[#8E95A5]">
+                  {new Date(conn.last_sync_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Estado sem conexão */}
       {!hasConnections && (
         <div className="rounded-2xl bg-[#171A24] border border-dashed border-[#2A2D3E] p-8 text-center">
@@ -269,7 +338,7 @@ export default function Financas() {
             Conta bancária não conectada — conecte via Pluggy para sincronização automática de transações.
           </p>
           <button
-            onClick={handleConnect}
+            onClick={() => void handleConnect()}
             className="mt-4 px-5 py-2 rounded-xl bg-[#7C5CFC] text-white text-sm font-medium hover:bg-[#6B4FD8] transition-colors"
           >
             Conectar agora
