@@ -22,7 +22,6 @@ export const sidebarModules = [
   { to: '/', label: 'Início', icon: Home },
   { to: '/estudos', label: 'Estudos', icon: GraduationCap },
   { to: '/tarefas', label: 'Tarefas', icon: House },
-  { to: '/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/compras', label: 'Compras', icon: ShoppingCart },
   { to: '/financas', label: 'Finanças', icon: Wallet },
   { to: '/investimentos', label: 'Investimentos', icon: TrendingUp },
