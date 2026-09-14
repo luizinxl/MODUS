@@ -7,7 +7,6 @@ import Investimentos from '@/pages/Financial/Investimentos';
 import Pessoal from '@/pages/Personal/Pessoal';
 import Tarefas from '@/pages/Tarefas';
 import Compras from '@/pages/Household/Compras';
-import Agenda from '@/pages/Agenda';
 import Lembretes from '@/pages/Lembretes';
 import Configuracoes from '@/pages/Settings/Configuracoes';
 import { ModuleColorsProvider } from '@/hooks/useModuleColors';
@@ -24,7 +23,6 @@ export default function App() {
           <Route path="/investimentos" element={<Investimentos />} />
           <Route path="/pessoal" element={<Pessoal />} />
           <Route path="/compras" element={<Compras />} />
-          <Route path="/agenda" element={<Agenda />} />
           <Route path="/lembretes" element={<Lembretes />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
         </Routes>
