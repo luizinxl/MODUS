@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MODUS — Fluxograma Interativo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1a1a2e;
+      --bg-surface: #16213e;
+      --bg-card: #0f3460;
+      --accent: #e94560;
+      --accent-glow: rgba(233, 69, 96, 0.35);
+      --green: #00c389;
+      --green-glow: rgba(0, 195, 137, 0.3);
+      --blue: #4361ee;
+      --blue-glow: rgba(67, 97, 238, 0.3);
+      --purple: #7b2ff7;
+      --purple-glow: rgba(123, 47, 247, 0.3);
+      --orange: #ff6d28;
+      --orange-glow: rgba(255, 109, 40, 0.3);
+      --yellow: #ffc857;
+      --yellow-glow: rgba(255, 200, 87, 0.3);
+      --cyan: #17c3b2;
+      --cyan-glow: rgba(23, 195, 178, 0.3);
+      --text: #e0e0e0;
+      --text-muted: #8892b0;
+      --border: rgba(255,255,255,0.08);
+      --node-w: 220px;
+      --node-h: auto;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── Top Bar ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 56px;
+      background: rgba(15, 15, 30, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+    }
+    .topbar-brand {
+      display: flex; align-items: center; gap: 12px;
+      font-weight: 800; font-size: 18px; letter-spacing: 1.5px;
+    }
+    .topbar-brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+    .topbar-controls { display: flex; align-items: center; gap: 8px; }
+    .topbar-controls button {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px; padding: 6px 12px;
+      cursor: pointer; font-size: 13px; font-family: inherit; transition: all 0.2s;
+    }
+    .topbar-controls button:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .zoom-display {
+      font-size: 12px; color: var(--text-muted); min-width: 48px; text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Canvas ── */
+    #canvas-wrapper {
+      position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+      overflow: hidden; cursor: grab;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(67,97,238,0.04) 0%, transparent 70%),
+        var(--bg);
+    }
+    #canvas-wrapper:active { cursor: grabbing; }
+    #canvas {
+      position: absolute; top: 0; left: 0;
+      transform-origin: 0 0;
+      width: 6000px; height: 4000px;
+    }
+
+    /* Grid dots */
+    #canvas-wrapper::before {
+      content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* ── SVG connections ── */
+    #connections {
+      position: absolute; top: 0; left: 0;
+      width: 6000px; height: 4000px;
+      pointer-events: none; z-index: 1;
+    }
+    .conn-path {
+      fill: none; stroke-width: 2.2;
+      stroke-dasharray: 8 4;
+      animation: dashFlow 1s linear infinite;
+    }
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -12; }
+    }
+    .conn-dot {
+      r: 4; animation: pulseDot 2s ease-in-out infinite;
+    }
+    @keyframes pulseDot { 0%,100%{opacity:.6;r:3} 50%{opacity:1;r:5} }
+
+    /* ── Nodes ── */
+    .node {
+      position: absolute; z-index: 10;
+      width: var(--node-w);
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.3s, border-color 0.3s, transform 0.15s;
+    }
+    .node:active { cursor: grabbing; z-index: 50; }
+    .node:hover {
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateY(-2px);
+    }
+    .node.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow), 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    .node-header {
+      padding: 14px 16px 10px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .node-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .node-title {
+      font-weight: 700; font-size: 13px; line-height: 1.3;
+      letter-spacing: 0.3px;
+    }
+    .node-subtitle {
+      font-size: 10px; color: var(--text-muted); margin-top: 2px;
+      text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500;
+    }
+    .node-body {
+      padding: 10px 16px 14px;
+    }
+    .node-tag {
+      display: inline-block;
+      font-size: 10px; font-weight: 600;
+      padding: 3px 8px; border-radius: 6px;
+      margin: 2px 3px 2px 0;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+    }
+
+    /* Status indicator */
+    .node-status {
+      position: absolute; top: 10px; right: 10px;
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .status-done { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+    .status-wip  { background: var(--yellow); box-shadow: 0 0 8px var(--yellow-glow); animation: blink 1.5s ease-in-out infinite; }
+    .status-todo { background: var(--text-muted); opacity: 0.4; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* Connection ports */
+    .port {
+      position: absolute; width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.25);
+      transition: all 0.2s;
+    }
+    .port:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.4); }
+    .port-right { right: -5px; top: 50%; transform: translateY(-50%); }
+    .port-left  { left: -5px; top: 50%; transform: translateY(-50%); }
+
+    /* ── Detail Panel (slides in from right) ── */
+    .detail-panel {
+      position: fixed; top: 56px; right: 0; bottom: 0; width: 380px;
+      background: rgba(15, 20, 40, 0.95);
+      backdrop-filter: blur(20px);
+      border-left: 1px solid var(--border);
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto; padding: 28px 24px;
+    }
+    .detail-panel.open { transform: translateX(0); }
+    .detail-close {
+      position: absolute; top: 16px; right: 16px;
+      background: none; border: none; color: var(--text-muted);
+      font-size: 22px; cursor: pointer; line-height: 1;
+    }
+    .detail-close:hover { color: #fff; }
+    .detail-icon { font-size: 40px; margin-bottom: 12px; }
+    .detail-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .detail-type { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); font-weight: 600; margin-bottom: 20px; }
+    .detail-section { margin-bottom: 20px; }
+    .detail-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+    .detail-desc { font-size: 13px; line-height: 1.7; color: #c0c8e0; }
+    .detail-list { list-style: none; padding: 0; }
+    .detail-list li {
+      font-size: 12px; padding: 6px 10px; margin-bottom: 4px;
+      background: rgba(255,255,255,0.04); border-radius: 6px;
+      display: flex; align-items: center; gap: 8px; color: #b0b8d0;
+    }
+    .detail-list li::before { content: '›'; color: var(--accent); font-weight: 700; }
+    .detail-status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; padding: 5px 12px;
+      border-radius: 20px; margin-bottom: 16px;
+    }
+    .badge-done  { background: rgba(0,195,137,0.15); color: var(--green); }
+    .badge-wip   { background: rgba(255,200,87,0.15); color: var(--yellow); }
+    .badge-todo  { background: rgba(136,146,176,0.15); color: var(--text-muted); }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ── Minimap ── */
+    .minimap {
+      position: fixed; bottom: 20px; right: 20px; z-index: 90;
+      width: 180px; height: 120px;
+      background: rgba(15, 20, 40, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+    .minimap-viewport {
+      position: absolute;
+      border: 1.5px solid var(--accent);
+      border-radius: 3px;
+      background: rgba(233, 69, 96, 0.08);
+      pointer-events: none;
+    }
+    .minimap-dot {
+      position: absolute; width: 4px; height: 4px;
+      border-radius: 50%; opacity: 0.7;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      position: fixed; bottom: 20px; left: 20px; z-index: 90;
+      background: rgba(15, 20, 40, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 18px;
+      backdrop-filter: blur(12px);
+    }
+    .legend h5 { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 5px; color: #b0b8d0; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ── Tooltip ── */
+    .tooltip {
+      position: fixed; z-index: 300;
+      background: rgba(10,10,25,0.95);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      pointer-events: none;
+      opacity: 0; transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .tooltip.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="dot"></div>
+      MODUS — Fluxograma do Projeto
+    </div>
+    <div class="topbar-controls">
+      <button onclick="zoomIn()">＋</button>
+      <span class="zoom-display" id="zoomDisplay">100%</span>
+      <button onclick="zoomOut()">ー</button>
+      <button onclick="fitView()">⊞ Fit</button>
+      <button onclick="resetView()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrapper">
+    <div id="canvas">
+      <svg id="connections"></svg>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detailPanel">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div id="detailContent"></div>
+  </div>
+
+  <!-- Minimap -->
+  <div class="minimap" id="minimap">
+    <div class="minimap-viewport" id="minimapViewport"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <h5>Status</h5>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Concluído</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> Em progresso</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--text-muted);opacity:.4"></div> Pendente</div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────
+const nodes = [
+  // Row 0 — Trigger
+  { id: 'idea', x: 120, y: 280, icon: '💡', title: 'Ideia Inicial', subtitle: 'Trigger',
+    color: 'var(--accent)', glow: 'var(--accent-glow)', status: 'done',
+    desc: 'Hub pessoal que reúne num só lugar: acadêmico, financeiro, investimentos, doméstico e desenvolvimento pessoal.',
+    tags: ['Conceito','Visão'],
+    items: ['Centralizar vida pessoal','Painel único e inteligente','Design system dark premium'] },
+
+  // Row 0 — Name
+  { id: 'name', x: 420, y: 280, icon: '🏷️', title: 'Definição de Nome', subtitle: 'Identidade',
+    color: 'var(--purple)', glow: 'var(--purple-glow)', status: 'done',
+    desc: 'O projeto se chama MODUS — nome latino que significa "modo, maneira, medida". Reflete organização e controle.',
+    tags: ['Branding','Identidade'],
+    items: ['Nome: MODUS','Repositório: dailys-repo','Versão: 0.1.0'] },
+
+  // Row 0 — Stack
+  { id: 'stack', x: 720, y: 280, icon: '⚙️', title: 'Tech Stack', subtitle: 'Fundação',
+    color: 'var(--blue)', glow: 'var(--blue-glow)', status: 'done',
+    desc: 'Stack moderna escolhida para performance, DX e design premium.',
+    tags: ['React 18','TypeScript','Vite','Tailwind','Framer Motion','Supabase'],
+    items: ['React 18 + TypeScript','Vite 5 (build & dev)','Tailwind CSS 3','Framer Motion (animações)','Supabase (auth + DB)','Vercel (deploy)'] },
+
+  // Row 1 — Módulos
+  { id: 'modules', x: 1080, y: 280, icon: '📦', title: 'Módulos Principais', subtitle: 'Arquitetura',
+    color: 'var(--orange)', glow: 'var(--orange-glow)', status: 'done',
+    desc: 'Os 5 grandes pilares do MODUS, cada um com suas páginas e componentes.',
+    tags: ['5 Módulos','Modular'],
+    items: ['📚 Acadêmico','💰 Financeiro','📈 Investimentos','🏠 Doméstico','🧠 Pessoal'] },
+
+  // Row 2 — Sub-modules (individual cards)
+  { id: 'mod-academic', x: 1440, y: 40, icon: '📚', title: 'Acadêmico', subtitle: 'Módulo',
+    color: 'var(--blue)', glow: 'var(--blue-glow)', status: 'wip',
+    desc: 'Controle de notas, frequência, horários e calendário acadêmico com scraping automático do portal.',
+    tags: ['Notas','Faltas','Grade','Scraper'],
+    items: ['Painel de notas por matéria','Controle de frequência','Grade de horários','Scraper do portal acadêmico','Calendário de provas'] },
+
+  { id: 'mod-finance', x: 1440, y: 260, icon: '💰', title: 'Finanças', subtitle: 'Módulo',
+    color: 'var(--green)', glow: 'var(--green-glow)', status: 'wip',
+    desc: 'Controle financeiro pessoal com integração Open Finance via Pluggy.',
+    tags: ['Pluggy','Contas','Extrato'],
+    items: ['Sincronização bancária (Pluggy)','Categorização de gastos','Dashboard de entradas/saídas','Meta de economia mensal'] },
+
+  { id: 'mod-invest', x: 1440, y: 480, icon: '📈', title: 'Investimentos', subtitle: 'Módulo',
+    color: 'var(--cyan)', glow: 'var(--cyan-glow)', status: 'done',
+    desc: 'Carteira de investimentos com cotações em tempo real e gráficos de evolução.',
+    tags: ['brapi','Portfolio','Charts'],
+    items: ['Cotações B3 via brapi','Gráfico de evolução patrimonial','Alocação por classe de ativo','Histórico de posições','Insights de IA (educativos)'] },
+
+  { id: 'mod-house', x: 1440, y: 700, icon: '🏠', title: 'Doméstico', subtitle: 'Módulo',
+    color: 'var(--orange)', glow: 'var(--orange-glow)', status: 'wip',
+    desc: 'Lista de compras inteligente e organização doméstica.',
+    tags: ['Compras','Lista','Estoque'],
+    items: ['Lista de compras com categorias','Controle de estoque','Previsão de reposição'] },
+
+  { id: 'mod-personal', x: 1440, y: 920, icon: '🧠', title: 'Pessoal', subtitle: 'Módulo',
+    color: 'var(--purple)', glow: 'var(--purple-glow)', status: 'wip',
+    desc: 'Desenvolvimento pessoal, hábitos, lembretes e metas.',
+    tags: ['Hábitos','Metas','Rotina'],
+    items: ['Tracker de hábitos','Sistema de metas','Lembretes inteligentes','Diário / notas rápidas'] },
+
+  // Row 3 — Development
+  { id: 'dev', x: 1820, y: 380, icon: '💻', title: 'Desenvolvimento', subtitle: 'Codificação',
+    color: 'var(--blue)', glow: 'var(--blue-glow)', status: 'wip',
+    desc: 'Implementação com assistência do Antigravity — prompts segmentados por modelo e módulo.',
+    tags: ['Components','Pages','Services','Hooks'],
+    items: ['src/components/ (por módulo)','src/pages/ (1 por módulo)','src/services/ (api, ai, integrations)','src/contexts/ (AuthContext)','src/hooks/ (useMobileDetect, ...)'] },
+
+  // Row 3 — Backend
+  { id: 'backend', x: 1820, y: 680, icon: '🗄️', title: 'Backend / Supabase', subtitle: 'Infraestrutura',
+    color: 'var(--cyan)', glow: 'var(--cyan-glow)', status: 'done',
+    desc: 'Banco de dados, autenticação e Edge Functions no Supabase.',
+    tags: ['PostgreSQL','Auth','Edge Functions'],
+    items: ['01-schema-base.sql','02-schema-expansao.sql','03-schema-academic-scraper.sql','Edge Functions (Pluggy sync, email)','Auth: Email/Password + Google'] },
+
+  // Row 4 — Integrations
+  { id: 'integrations', x: 2180, y: 280, icon: '🔌', title: 'Integrações', subtitle: 'APIs Externas',
+    color: 'var(--yellow)', glow: 'var(--yellow-glow)', status: 'wip',
+    desc: 'Serviços externos conectados ao MODUS.',
+    tags: ['Pluggy','brapi','Gmail','Antigravity'],
+    items: ['Pluggy (Open Finance)','brapi (cotações B3)','Google Finance (fallback)','Gmail (cron de emails)','Antigravity (IA assistente)','Tesseract.js (OCR)'] },
+
+  // Row 5 — Tests
+  { id: 'tests', x: 2540, y: 400, icon: '🧪', title: 'Testes & QA', subtitle: 'Validação',
+    color: 'var(--orange)', glow: 'var(--orange-glow)', status: 'todo',
+    desc: 'Testes unitários, integração e verificação visual de cada módulo.',
+    tags: ['Unit','Integration','Visual'],
+    items: ['Testes de componentes','Testes de integração API','Validação de responsividade','Verificação de fluxo auth','Lighthouse audit'] },
+
+  // Row 6 — Deploy
+  { id: 'deploy', x: 2900, y: 400, icon: '🚀', title: 'Deploy / Produção', subtitle: 'Lançamento',
+    color: 'var(--green)', glow: 'var(--green-glow)', status: 'wip',
+    desc: 'Deploy contínuo na Vercel — cada push na main atualiza automaticamente.',
+    tags: ['Vercel','CI/CD','Prod'],
+    items: ['Vercel (autodetecta Vite)','CI/CD via GitHub push','Environment Variables na Vercel','vercel.json configurado','Preview deploys por PR'] },
+];
+
+const connections = [
+  { from: 'idea', to: 'name', color: 'var(--accent)' },
+  { from: 'name', to: 'stack', color: 'var(--purple)' },
+  { from: 'stack', to: 'modules', color: 'var(--blue)' },
+  { from: 'modules', to: 'mod-academic', color: 'var(--blue)' },
+  { from: 'modules', to: 'mod-finance', color: 'var(--green)' },
+  { from: 'modules', to: 'mod-invest', color: 'var(--cyan)' },
+  { from: 'modules', to: 'mod-house', color: 'var(--orange)' },
+  { from: 'modules', to: 'mod-personal', color: 'var(--purple)' },
+  { from: 'mod-academic', to: 'dev', color: 'var(--blue)' },
+  { from: 'mod-finance', to: 'dev', color: 'var(--green)' },
+  { from: 'mod-invest', to: 'dev', color: 'var(--cyan)' },
+  { from: 'mod-house', to: 'dev', color: 'var(--orange)' },
+  { from: 'mod-personal', to: 'dev', color: 'var(--purple)' },
+  { from: 'dev', to: 'backend', color: 'var(--cyan)' },
+  { from: 'dev', to: 'integrations', color: 'var(--yellow)' },
+  { from: 'backend', to: 'integrations', color: 'var(--cyan)' },
+  { from: 'integrations', to: 'tests', color: 'var(--yellow)' },
+  { from: 'dev', to: 'tests', color: 'var(--blue)' },
+  { from: 'tests', to: 'deploy', color: 'var(--green)' },
+];
+
+// ── State ──
+let scale = 0.72, panX = 60, panY = -80;
+let dragging = null, dragOffsetX = 0, dragOffsetY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0;
+let selectedNode = null;
+
+const canvas = document.getElementById('canvas');
+const wrapper = document.getElementById('canvas-wrapper');
+const svgEl  = document.getElementById('connections');
+
+// ── Render nodes ──
+function renderNodes() {
+  nodes.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'node';
+    el.id = `node-${n.id}`;
+    el.style.left = n.x + 'px';
+    el.style.top  = n.y + 'px';
+
+    const statusClass = n.status === 'done' ? 'status-done' : n.status === 'wip' ? 'status-wip' : 'status-todo';
+    const tagsHTML = n.tags.map(t => `<span class="node-tag">${t}</span>`).join('');
+
+    el.innerHTML = `
+      <div class="node-status ${statusClass}"></div>
+      <div class="port port-left"></div>
+      <div class="port port-right"></div>
+      <div class="node-header">
+        <div class="node-icon" style="background:${n.color}22; color:${n.color}; box-shadow:0 0 16px ${n.glow};">${n.icon}</div>
+        <div>
+          <div class="node-title">${n.title}</div>
+          <div class="node-subtitle">${n.subtitle}</div>
+        </div>
+      </div>
+      <div class="node-body">${tagsHTML}</div>
+    `;
+
+    // Drag
+    el.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      dragging = n;
+      const rect = el.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+      el.style.zIndex = 50;
+    });
+
+    // Click for details
+    el.addEventListener('click', e => {
+      if (dragging && (Math.abs(e.movementX) > 3 || Math.abs(e.movementY) > 3)) return;
+      showDetail(n);
+    });
+
+    // Tooltip
+    el.addEventListener('mouseenter', e => {
+      const tip = document.getElementById('tooltip');
+      tip.textContent = `Clique para detalhes · Arraste para mover`;
+      tip.classList.add('show');
+    });
+    el.addEventListener('mousemove', e => {
+      const tip = document.getElementById('tooltip');
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+    });
+    el.addEventListener('mouseleave', () => {
+      document.getElementById('tooltip').classList.remove('show');
+    });
+
+    canvas.appendChild(el);
+  });
+}
+
+// ── Render connections (SVG) ──
+function renderConnections() {
+  svgEl.innerHTML = '';
+  connections.forEach(c => {
+    const fromNode = nodes.find(n => n.id === c.from);
+    const toNode   = nodes.find(n => n.id === c.to);
+    if (!fromNode || !toNode) return;
+
+    const fromEl = document.getElementById(`node-${c.from}`);
+    const toEl   = document.getElementById(`node-${c.to}`);
+    const fw = fromEl.offsetWidth, fh = fromEl.offsetHeight;
+    const tw = toEl.offsetWidth, th = toEl.offsetHeight;
+
+    const x1 = fromNode.x + fw;
+    const y1 = fromNode.y + fh / 2;
+    const x2 = toNode.x;
+    const y2 = toNode.y + th / 2;
+
+    const dx = Math.abs(x2 - x1) * 0.5;
+    const d = `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('class','conn-path');
+    path.setAttribute('stroke', c.color);
+    svgEl.appendChild(path);
+
+    // Animated dot on the path
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('class','conn-dot');
+    circle.setAttribute('fill', c.color);
+    const anim = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    anim.setAttribute('dur','3s');
+    anim.setAttribute('repeatCount','indefinite');
+    anim.setAttribute('path', d);
+    circle.appendChild(anim);
+    svgEl.appendChild(circle);
+  });
+}
+
+// ── Pan / Zoom ──
+function applyTransform() {
+  canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  document.getElementById('zoomDisplay').textContent = Math.round(scale * 100) + '%';
+  updateMinimap();
+}
+
+wrapper.addEventListener('mousedown', e => {
+  if (e.target.closest('.node')) return;
+  isPanning = true;
+  panStartX = e.clientX - panX;
+  panStartY = e.clientY - panY;
+});
+
+window.addEventListener('mousemove', e => {
+  if (dragging) {
+    const n = dragging;
+    const el = document.getElementById(`node-${n.id}`);
+    n.x = (e.clientX - panX - dragOffsetX * scale) / scale;
+    n.y = (e.clientY - 56 - panY - dragOffsetY * scale) / scale;
+    el.style.left = n.x + 'px';
+    el.style.top  = n.y + 'px';
+    renderConnections();
+    updateMinimap();
+    return;
+  }
+  if (isPanning) {
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    applyTransform();
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (dragging) {
+    const el = document.getElementById(`node-${dragging.id}`);
+    el.style.zIndex = 10;
+    dragging = null;
+  }
+  isPanning = false;
+});
+
+wrapper.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.06 : 0.06;
+  const newScale = Math.min(2, Math.max(0.2, scale + delta));
+  // Zoom towards cursor
+  const rect = wrapper.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * (newScale / scale);
+  panY = my - (my - panY) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+}, { passive: false });
+
+function zoomIn()  { scale = Math.min(2, scale + 0.1); applyTransform(); }
+function zoomOut() { scale = Math.max(0.2, scale - 0.1); applyTransform(); }
+function resetView() { scale = 0.72; panX = 60; panY = -80; applyTransform(); }
+
+function fitView() {
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  nodes.forEach(n => {
+    const el = document.getElementById(`node-${n.id}`);
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + el.offsetWidth);
+    maxY = Math.max(maxY, n.y + el.offsetHeight);
+  });
+  const contentW = maxX - minX + 100;
+  const contentH = maxY - minY + 100;
+  const viewW = wrapper.clientWidth;
+  const viewH = wrapper.clientHeight;
+  scale = Math.min(viewW / contentW, viewH / contentH, 1.2);
+  panX = (viewW - contentW * scale) / 2 - minX * scale + 50;
+  panY = (viewH - contentH * scale) / 2 - minY * scale + 50;
+  applyTransform();
+}
+
+// ── Detail Panel ──
+function showDetail(n) {
+  document.querySelectorAll('.node.selected').forEach(el => el.classList.remove('selected'));
+  document.getElementById(`node-${n.id}`).classList.add('selected');
+  selectedNode = n;
+
+  const statusLabel = n.status === 'done' ? 'Concluído' : n.status === 'wip' ? 'Em progresso' : 'Pendente';
+  const badgeClass  = n.status === 'done' ? 'badge-done' : n.status === 'wip' ? 'badge-wip' : 'badge-todo';
+  const dotColor    = n.status === 'done' ? 'var(--green)' : n.status === 'wip' ? 'var(--yellow)' : 'var(--text-muted)';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="detail-icon">${n.icon}</div>
+    <div class="detail-title">${n.title}</div>
+    <div class="detail-type">${n.subtitle}</div>
+    <div class="detail-status-badge ${badgeClass}">
+      <div class="badge-dot" style="background:${dotColor}"></div>
+      ${statusLabel}
+    </div>
+    <div class="detail-section">
+      <h4>Descrição</h4>
+      <p class="detail-desc">${n.desc}</p>
+    </div>
+    <div class="detail-section">
+      <h4>Tags</h4>
+      <div>${n.tags.map(t => `<span class="node-tag" style="font-size:11px;padding:4px 10px;">${t}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <h4>Itens</h4>
+      <ul class="detail-list">
+        ${n.items.map(i => `<li>${i}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.querySelectorAll('.node.selected').forEach(el => el.classList.remove('selected'));
+  selectedNode = null;
+}
+
+// Close panel on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+// ── Minimap ──
+function updateMinimap() {
+  const mm = document.getElementById('minimap');
+  const vp = document.getElementById('minimapViewport');
+  const mmW = mm.clientWidth, mmH = mm.clientHeight;
+
+  // Canvas bounds
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  nodes.forEach(n => {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + 220);
+    maxY = Math.max(maxY, n.y + 120);
+  });
+  const cw = maxX - minX + 200;
+  const ch = maxY - minY + 200;
+  const s = Math.min(mmW / cw, mmH / ch);
+
+  // Draw dots
+  mm.querySelectorAll('.minimap-dot').forEach(d => d.remove());
+  nodes.forEach(n => {
+    const dot = document.createElement('div');
+    dot.className = 'minimap-dot';
+    dot.style.left = ((n.x - minX + 100) * s) + 'px';
+    dot.style.top  = ((n.y - minY + 100) * s) + 'px';
+    dot.style.background = n.color;
+    mm.appendChild(dot);
+  });
+
+  // Viewport rect
+  const viewW = wrapper.clientWidth;
+  const viewH = wrapper.clientHeight - 56;
+  const vpX = (-panX / scale - minX + 100) * s;
+  const vpY = (-panY / scale - minY + 100) * s;
+  const vpW = (viewW / scale) * s;
+  const vpH = (viewH / scale) * s;
+  vp.style.left = vpX + 'px';
+  vp.style.top  = vpY + 'px';
+  vp.style.width  = vpW + 'px';
+  vp.style.height = vpH + 'px';
+}
+
+// ── Init ──
+renderNodes();
+renderConnections();
+applyTransform();
+setTimeout(fitView, 100);
+</script>
+</body>
+</html>
