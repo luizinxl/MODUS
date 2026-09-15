@@ -57,13 +57,19 @@ export async function fetchAcademicTasks(
  * Busca tarefas de um dia específico (para o painel do calendário).
  */
 export async function fetchTasksByDate(date: string): Promise<AcademicTask[]> {
-  // Buscar tarefas que vencem nesse dia, começam nesse dia, ou têm prova nesse período
+  // Buscar tarefas que vencem nesse dia, começam nesse dia, ou têm prova nesse período.
+  //
+  // IMPORTANTE: cada intervalo de data precisa ser agrupado com and(...) dentro do
+  // .or() do PostgREST. Sem o and(), "due_date.gte.X,due_date.lte.Y" vira duas
+  // condições OR independentes (devido >= X **ou** devido <= Y), o que casa com
+  // praticamente qualquer tarefa que tenha due_date — por isso clicar em qualquer
+  // dia mostrava as atividades de todos os dias.
   const { data, error } = await supabase
     .from('academic_tasks')
     .select('*')
     .or(
-      `due_date.gte.${date}T00:00:00,due_date.lte.${date}T23:59:59,` +
-      `start_date.gte.${date}T00:00:00,start_date.lte.${date}T23:59:59,` +
+      `and(due_date.gte.${date}T00:00:00,due_date.lte.${date}T23:59:59),` +
+      `and(start_date.gte.${date}T00:00:00,start_date.lte.${date}T23:59:59),` +
       `and(exam_period_start.lte.${date},exam_period_end.gte.${date})`
     )
     .order('due_date', { ascending: true });
@@ -115,12 +121,14 @@ export async function fetchCalendarMonth(
   const startDate = `${year}-${monthStr}-01`;
   const endDate = `${year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
 
+  // Mesmo cuidado do fetchTasksByDate: cada faixa precisa do próprio and(...),
+  // senão o OR "solto" faz o mês inteiro casar com quase todas as tarefas.
   const { data, error } = await supabase
     .from('academic_tasks')
     .select('due_date, start_date, task_type, task_subtype, exam_period_start, exam_period_end, status')
     .or(
-      `due_date.gte.${startDate},due_date.lte.${endDate}T23:59:59,` +
-      `start_date.gte.${startDate},start_date.lte.${endDate}T23:59:59,` +
+      `and(due_date.gte.${startDate},due_date.lte.${endDate}T23:59:59),` +
+      `and(start_date.gte.${startDate},start_date.lte.${endDate}T23:59:59),` +
       `and(exam_period_start.lte.${endDate},exam_period_end.gte.${startDate})`
     )
     .not('status', 'eq', 'cancelled');

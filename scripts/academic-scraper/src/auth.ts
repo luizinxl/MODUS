@@ -29,6 +29,18 @@ function log(msg: string) {
   console.log(`[auth] ${new Date().toISOString()} — ${msg}`);
 }
 
+// ---- Timing humano ----
+// Delays fixos (ex: sempre 30ms entre teclas) são um fingerprint clássico de
+// automação — digitação humana real tem variância. randomDelay() gera um
+// atraso aleatório dentro de uma faixa para usar em page.type()/sleeps.
+function randomDelay(min: number, max: number): number {
+  return Math.floor(min + Math.random() * (max - min));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 // ---- Cookies ----
 
 async function saveCookies(page: Page): Promise<void> {
@@ -138,8 +150,9 @@ async function attemptLogin(page: Page): Promise<boolean> {
   // 1. Digitar o username/e-mail no portal da Univesp
   const usernameSelector = '#username, input[name="username"]';
   await page.waitForSelector(usernameSelector, { timeout: 15_000 });
-  await page.type(usernameSelector, user, { delay: 30 });
-  await new Promise((r) => setTimeout(r, 1000));
+  await page.click(usernameSelector).catch(() => {});
+  await page.type(usernameSelector, user, { delay: randomDelay(70, 160) });
+  await sleep(randomDelay(600, 1400));
 
   // 2. Se for login local (ex: CPF), o campo de senha aparece na própria página
   const isLocalPassVisible = await page
@@ -148,7 +161,9 @@ async function attemptLogin(page: Page): Promise<boolean> {
 
   if (isLocalPassVisible) {
     log('Modo de autenticação local detectado — digitando senha...');
-    await page.type('#password', pass, { delay: 30 });
+    await page.click('#password').catch(() => {});
+    await page.type('#password', pass, { delay: randomDelay(70, 160) });
+    await sleep(randomDelay(300, 700));
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30_000 }).catch(() => {}),
       page.click('#login-button-default'),
@@ -162,38 +177,38 @@ async function attemptLogin(page: Page): Promise<boolean> {
     await page.waitForSelector('input[type="password"]', { timeout: 30_000 });
     log(`Página de autenticação atingida: ${page.url()}`);
 
-    // Garantir que o campo de username no IdP está preenchido
-    log('Garantindo username no formulário IdP...');
-    await page.evaluate((userVal) => {
-      const u = document.querySelector('input#username') as HTMLInputElement;
-      if (u) {
-        u.value = userVal;
-        u.dispatchEvent(new Event('input', { bubbles: true }));
-        u.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, user);
+    // ---- IMPORTANTE: preenchimento "humano" do formulário do IdP ----
+    // A versão anterior preenchia username/senha com page.evaluate() setando
+    // .value diretamente e disparando eventos sintéticos (isTrusted: false),
+    // e enviava o formulário chamando form.submit() puro via JS. Nenhuma
+    // interação real de usuário faz isso — é um dos sinais mais fortes que
+    // WAFs e antifraude de SSO corporativo (Azure AD/ADFS, no caso da Univesp)
+    // usam para marcar a sessão como automação e bloquear o login. Trocado
+    // por digitação e clique reais do Puppeteer (eventos trusted) + envio via
+    // tecla Enter, exatamente como um usuário faria.
+    const idpUsernameSelector = 'input#username';
+    const idpUsername = await page.$(idpUsernameSelector);
+    if (idpUsername) {
+      log('Confirmando username no formulário IdP...');
+      await page.click(idpUsernameSelector, { clickCount: 3 }).catch(() => {});
+      await page.keyboard.press('Backspace').catch(() => {});
+      await page.type(idpUsernameSelector, user, { delay: randomDelay(70, 160) });
+      await sleep(randomDelay(200, 500));
+    }
 
-    // Digitar a senha no IdP de forma robusta
     log('Digitando senha no IdP...');
-    await page.evaluate((passVal) => {
-      const p = document.querySelector('input[type="password"]') as HTMLInputElement;
-      if (p) {
-        p.value = passVal;
-        p.dispatchEvent(new Event('input', { bubbles: true }));
-        p.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, pass);
+    const idpPasswordSelector = 'input[type="password"]';
+    await page.click(idpPasswordSelector, { clickCount: 3 }).catch(() => {});
+    await page.keyboard.press('Backspace').catch(() => {});
+    await page.type(idpPasswordSelector, pass, { delay: randomDelay(70, 160) });
+    await sleep(randomDelay(400, 900));
 
-    // Clicar em Entrar via form submit nativo
     log('Enviando credenciais...');
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30_000 }).catch(() => {}),
-      page.evaluate(() => {
-        const form = document.querySelector('form[name="f"]') as HTMLFormElement;
-        if (form) form.submit();
-      })
+      page.keyboard.press('Enter'),
     ]);
-    await new Promise((r) => setTimeout(r, 4000));
+    await sleep(randomDelay(3000, 5000));
 
     // Alguns fluxos SSO inserem um prompt extra ("Continuar conectado?")
     // entre o envio de credenciais e o retorno POST para o AVA.
