@@ -179,6 +179,69 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
 }
 
 // ----------------------------------------------------------------
+// Hook de grafico mensal (gastos por dia)
+// ----------------------------------------------------------------
+export interface DayData {
+  day: number;          // 1-31
+  label: string;        // "01/09"
+  expenses: number;
+  income: number;
+}
+
+export function useMonthlyChart(monthOffset = 0) {
+  const [data, setData] = useState<DayData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const now = new Date();
+        const target = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+        const start = new Date(target.getFullYear(), target.getMonth(), 1).toISOString().split('T')[0];
+        const end = new Date(target.getFullYear(), target.getMonth() + 1, 0).toISOString().split('T')[0];
+        const daysInMonth = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+
+        const { data: rows } = await supabase
+          .from('transactions')
+          .select('amount, transaction_type, transaction_date')
+          .eq('user_id', user.id)
+          .gte('transaction_date', start)
+          .lte('transaction_date', end);
+
+        const map: Record<number, { expenses: number; income: number }> = {};
+        for (let d = 1; d <= daysInMonth; d++) map[d] = { expenses: 0, income: 0 };
+
+        for (const r of rows ?? []) {
+          const d = new Date(r.transaction_date + 'T00:00:00').getDate();
+          if (r.transaction_type === 'income') map[d].income += Number(r.amount);
+          else map[d].expenses += Number(r.amount);
+        }
+
+        if (!cancelled) {
+          setData(
+            Object.entries(map).map(([day, v]) => ({
+              day: Number(day),
+              label: `${String(day).padStart(2, '0')}/${String(target.getMonth() + 1).padStart(2, '0')}`,
+              ...v,
+            }))
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [monthOffset]);
+
+  return { data, loading };
+}
+
+// ----------------------------------------------------------------
 // Hook de conexoes Pluggy
 // ----------------------------------------------------------------
 export interface PluggyConnection {
