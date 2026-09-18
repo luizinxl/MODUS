@@ -10,7 +10,8 @@ import {
   CalendarDays,
   Sparkles,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
 import {
   startOfMonth,
@@ -324,7 +325,14 @@ export default function AcademicDashboard() {
               ) : filteredDayEvents.length > 0 ? (
                 filteredDayEvents.map((task, i) => {
                   const cfg = categoryConfig[task.task_type || 'default'] || categoryConfig['default'];
-                  
+                  const hasLink = Boolean(task.ava_url);
+
+                  const openInAva = () => {
+                    if (task.ava_url) {
+                      window.open(task.ava_url, '_blank', 'noopener,noreferrer');
+                    }
+                  };
+
                   return (
                     <motion.div
                       key={task.id}
@@ -333,7 +341,20 @@ export default function AcademicDashboard() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.25, delay: i * 0.05 }}
-                      className="group rounded-xl border p-4 cursor-pointer transition-all duration-200 hover:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)]"
+                      role={hasLink ? 'link' : undefined}
+                      tabIndex={hasLink ? 0 : undefined}
+                      onClick={openInAva}
+                      onKeyDown={(e) => {
+                        if (hasLink && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          openInAva();
+                        }
+                      }}
+                      title={hasLink ? 'Abrir no AVA' : undefined}
+                      className={clsx(
+                        'group rounded-xl border p-4 transition-all duration-200 hover:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)]',
+                        hasLink ? 'cursor-pointer' : 'cursor-default'
+                      )}
                       style={{
                         backgroundColor: cfg.bg,
                         borderColor: cfg.border,
@@ -375,6 +396,12 @@ export default function AcademicDashboard() {
                             )}
                           </div>
                         </div>
+                        {hasLink && (
+                          <ExternalLink
+                            size={14}
+                            className="shrink-0 mt-1 text-[#4B5563] group-hover:text-blue-300 transition-colors"
+                          />
+                        )}
                       </div>
 
                       {/* Description */}
