@@ -98,58 +98,61 @@ export default function Dashboard() {
       {/* Cabeçalho do Dashboard */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2" style={{ color: themeColor }}>
+          <h1 className="text-4xl font-black tracking-tighter flex items-center gap-3" style={{ color: themeColor }}>
             Seu dia
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1 font-medium tracking-tight">
             Visão geral de tudo em um lugar só.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Badge className="bg-muted text-muted-foreground border-border px-3 py-1">
-            <span className="w-2 h-2 rounded-full bg-income animate-pulse mr-1" />
+        <div className="flex items-center gap-3">
+          <Badge className="bg-white/5 backdrop-blur-md text-foreground border-white/10 px-4 py-1.5 rounded-full shadow-inner font-medium">
+            <span className="w-2 h-2 rounded-full bg-income animate-pulse mr-2 shadow-[0_0_8px_var(--income)]" />
             Tempo Real
           </Badge>
-          <div className="text-xs text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-xl">
+          <div className="text-xs font-semibold text-muted-foreground bg-white/5 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full shadow-inner">
             {new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
           </div>
         </div>
       </div>
 
-      {/* Grid de Métricas Rápidas (Estilo Monef) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Grid de Métricas Rápidas (Bento Grid Premium) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {quick.map((q, idx) => (
           <motion.div
             key={q.label}
             initial={motionInitial}
             animate={motionAnimate}
-            whileHover={{ y: shouldReduceMotion ? 0 : -4 }}
-            transition={{ duration: 0.35, delay: shouldReduceMotion ? 0 : idx * 0.05 }}
+            whileHover={{ y: shouldReduceMotion ? 0 : -6, scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20, delay: shouldReduceMotion ? 0 : idx * 0.05 }}
           >
             <Card
               variant={q.variant}
-              className="p-5 flex flex-col justify-between h-full bg-card hover:border-primary transition-all"
+              className="p-6 md:p-8 flex flex-col justify-between h-full bg-card/60 backdrop-blur-xl border border-white/5 hover:border-white/10 transition-all rounded-[2rem] shadow-2xl relative overflow-hidden group"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-primary">
-                  <q.icon size={20} weight="bold" />
+              {/* Inner glow effect on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              
+              <div className="flex items-center justify-between mb-8 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary shadow-inner">
+                  <q.icon size={24} weight="duotone" />
                 </div>
                 <span
-                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
+                  className={`text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1 backdrop-blur-md shadow-inner ${
                     q.positive
-                      ? 'bg-income/15 text-income border border-income/30'
-                      : 'bg-destructive/15 text-destructive border border-destructive/30'
+                      ? 'bg-income/10 text-income border border-income/20'
+                      : 'bg-destructive/10 text-destructive border border-destructive/20'
                   }`}
                 >
-                  {q.positive ? <ArrowUpRight size={12} weight="bold" /> : <TrendDown size={12} weight="bold" />}
+                  {q.positive ? <ArrowUpRight size={14} weight="bold" /> : <TrendDown size={14} weight="bold" />}
                   {q.change}
                 </span>
               </div>
 
-              <div>
-                <div className="text-2xl font-bold tracking-tight text-foreground">{q.value}</div>
-                <div className="text-xs text-muted-foreground mt-1 font-medium">{q.label}</div>
+              <div className="relative z-10">
+                <div className="text-3xl font-black tracking-tighter text-foreground drop-shadow-sm">{q.value}</div>
+                <div className="text-sm text-muted-foreground mt-1.5 font-semibold tracking-tight">{q.label}</div>
               </div>
             </Card>
           </motion.div>
@@ -158,49 +161,48 @@ export default function Dashboard() {
 
       {/* Seção Principal: AI Assistant Card + Gráfico de Evolução (Monef Signature) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Card AI Assistant estilo Monef com gradiente roxo */}
+        {/* Card AI Assistant (Apple Intelligence Style) */}
         <motion.div
           className="lg:col-span-5"
           initial={motionInitial}
           animate={motionAnimate}
           transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : 0.15 }}
         >
-          <div className="h-full rounded-2xl bg-gradient-to-b from-[#231A4A] via-[#181829] to-card border border-primary/30 p-6 flex flex-col justify-between shadow-[0_8px_32px_-4px_rgba(124,92,252,0.15)] relative overflow-hidden">
-            {/* Efeito sutil de iluminação roxa */}
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+          <div className="h-full rounded-[2.5rem] bg-[#09090b]/80 backdrop-blur-3xl border border-white/10 p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+            {/* Efeito sutil de iluminação inteligente */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none transition-opacity duration-700 opacity-50 group-hover:opacity-80" />
+            
+            {/* Grain overlay for texture */}
+            <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
 
-            <div>
+            <div className="relative z-10">
               {/* Header do Assistant */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/40">
-                    <Robot size={18} weight="bold" />
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/20">
+                    <Sparkle size={20} weight="fill" className="text-primary-foreground drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
                   </div>
-                  <span className="text-sm font-bold text-white tracking-wide">AI Assistant</span>
+                  <span className="text-sm font-bold text-foreground tracking-widest uppercase opacity-80">MODUS Intelligence</span>
                 </div>
-                <Badge className="bg-primary/20 text-primary-foreground border-primary/30 text-[10px]">
-                  <Sparkle size={11} className="mr-1" weight="fill" />
-                  Monef Intelligence
-                </Badge>
               </div>
 
               {/* Chamada principal */}
-              <h3 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight mb-2">
-                Como o Assistant pode te ajudar hoje?
+              <h3 className="text-2xl sm:text-3xl font-black tracking-tighter text-foreground leading-tight mb-3">
+                Como posso ajudar hoje?
               </h3>
-              <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
-                Análise preditiva de saldo, priorização de tarefas acadêmicas e insights financeiros inteligentes.
+              <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed max-w-sm">
+                Análise preditiva de saldo, priorização de tarefas ou insights inteligentes baseados nos seus dados.
               </p>
 
-              {/* Pílulas de sugestões estilo Monef */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {['Prever saldo do mês', 'Organizar tarefas urgentes', 'Evolução de investimentos'].map(
+              {/* Pílulas de sugestões Premium */}
+              <div className="flex flex-wrap gap-2 mb-8">
+                {['Prever saldo', 'Priorizar tarefas', 'Análise de gastos'].map(
                   (suggestion) => (
                     <button
                       key={suggestion}
                       type="button"
                       onClick={() => setPrompt(suggestion)}
-                      className="text-xs px-3 py-1.5 rounded-full bg-accent/80 text-foreground border border-border hover:border-primary/60 hover:bg-accent transition-all text-left min-h-[44px]"
+                      className="text-xs font-semibold px-4 py-2.5 rounded-full bg-white/5 text-foreground border border-white/10 hover:border-primary/50 hover:bg-white/10 transition-all shadow-inner backdrop-blur-sm"
                     >
                       {suggestion}
                     </button>
@@ -209,11 +211,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Barra de input do AI Assistant estilo Monef */}
-            <div className="mt-4">
+            {/* Barra de input do AI Assistant flutuante */}
+            <div className="relative z-10 mt-auto">
               <form 
-                className={`flex items-center gap-2 bg-input/40 border border-border rounded-xl p-1.5 transition-colors ${
-                  isSubmitting ? 'opacity-70 pointer-events-none' : 'focus-within:border-primary/70'
+                className={`flex items-center gap-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-4 transition-all duration-300 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] ${
+                  isSubmitting ? 'opacity-70 pointer-events-none' : 'focus-within:border-primary/50 focus-within:shadow-[0_8px_32px_-4px_rgba(124,92,252,0.3)] focus-within:bg-black/60'
                 }`}
                 onSubmit={handlePromptSubmit}
               >
@@ -222,31 +224,31 @@ export default function Dashboard() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Pergunte qualquer coisa ao MODUS..."
-                  className="bg-transparent text-sm text-foreground placeholder-muted-foreground px-3 py-1.5 w-full outline-none"
+                  className="bg-transparent text-sm font-medium text-foreground placeholder-muted-foreground/50 w-full outline-none"
                   disabled={isSubmitting}
                 />
                 <button
                   type="submit"
                   aria-label="Enviar prompt"
-                  className="w-10 h-10 rounded-lg bg-primary hover:bg-brand-dark text-white flex items-center justify-center shadow-md shadow-primary/30 transition-transform active:scale-95 shrink-0 min-h-[44px] min-w-[44px]"
+                  className="w-10 h-10 rounded-full bg-primary hover:bg-brand-light text-white flex items-center justify-center shadow-inner transition-transform active:scale-95 shrink-0"
                   disabled={isSubmitting || !prompt.trim()}
                 >
-                  <PaperPlaneRight size={16} weight={isSubmitting ? "regular" : "bold"} className={isSubmitting ? "animate-pulse" : ""} />
+                  <PaperPlaneRight size={18} weight={isSubmitting ? "regular" : "fill"} className={isSubmitting ? "animate-pulse" : ""} />
                 </button>
               </form>
             </div>
           </div>
         </motion.div>
 
-        {/* Gráfico Animado de Impacto Financeiro (Monef Style Recharts + Framer Motion) */}
+        {/* Gráfico Animado de Impacto Financeiro (Bento Grid Premium) */}
         <motion.div
           className="lg:col-span-7"
           initial={motionInitial}
           animate={motionAnimate}
           transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : 0.25 }}
         >
-          <div className="h-full rounded-2xl bg-card border border-border p-6 flex flex-col justify-between shadow-lg shadow-black/20">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+          <div className="h-full rounded-[2.5rem] bg-card/60 backdrop-blur-xl border border-white/5 p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <h3 className="text-base font-bold text-foreground">Impacto Financeiro</h3>
                 <p className="text-xs text-muted-foreground">

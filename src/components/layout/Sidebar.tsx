@@ -94,54 +94,49 @@ export function Sidebar() {
   return (
     <>
     <aside className={clsx(
-      "shrink-0 bg-background flex flex-col justify-between h-full transition-all duration-300 relative border-r border-border",
-      isCollapsed ? "w-20" : "w-60"
+      "shrink-0 flex flex-col justify-between h-full transition-all duration-300 relative py-2",
+      isCollapsed ? "w-20" : "w-64"
     )}>
       {/* Botão de Toggle */}
       <motion.button 
         onClick={toggleSidebar}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="absolute -right-3.5 top-8 w-7 h-7 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors z-10 shadow-md"
+        className="absolute -right-3 top-8 w-6 h-6 bg-card border border-border/50 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-10 shadow-lg backdrop-blur-md"
       >
-        {isCollapsed ? <CaretRight size={16} weight="bold" /> : <CaretLeft size={16} weight="bold" />}
+        {isCollapsed ? <CaretRight size={14} weight="bold" /> : <CaretLeft size={14} weight="bold" />}
       </motion.button>
 
-      <div className="flex-1 flex flex-col pt-6 pb-4 overflow-hidden items-center min-h-0">
+      <div className="flex-1 flex flex-col pt-6 pb-4 overflow-hidden items-center min-h-0 px-3">
         {/* Logo */}
-        <div className={clsx("pb-8 flex w-full", isCollapsed ? "justify-center px-0" : "justify-start px-6")}>
+        <div className={clsx("pb-8 flex w-full", isCollapsed ? "justify-center" : "justify-start pl-3")}>
           <Logo size="sm" showWordmark={!isCollapsed} className={isCollapsed ? "justify-center" : "justify-start"} />
         </div>
 
         {/* Módulos Container (Pill) */}
-        <div className={clsx(
-          "flex-1 flex flex-col transition-all duration-300 min-h-0 w-full",
-          isCollapsed ? "w-16" : "w-[calc(100%-24px)]"
-        )}>
+        <div className="flex-1 flex flex-col transition-all duration-300 min-h-0 w-full">
           {!isCollapsed && (
-            <div className="flex items-center justify-end px-4 pb-3 shrink-0">
+            <div className="flex items-center justify-between px-4 pb-4 shrink-0">
+              <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/60">Menu Principal</span>
               <button 
                 onClick={() => setIsColorPickerOpen(true)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground/60 hover:text-foreground transition-colors"
                 title="Personalizar cores"
               >
-                <Pencil size={16} weight="bold" />
+                <Pencil size={14} weight="fill" />
               </button>
             </div>
           )}
           
-          <div className={clsx(
-            "bg-card/80 flex flex-col gap-2 py-2 overflow-y-auto custom-scrollbar border border-border min-h-0",
-            isCollapsed ? "rounded-full px-2 items-center" : "rounded-3xl px-2"
-          )}>
+          <div className="flex flex-col gap-1.5 overflow-y-auto custom-scrollbar min-h-0 w-full">
             {sidebarModules.map((it) => {
               const moduleKey = routeToKeyMap[it.to] || 'inicio';
               const moduleColor = colors[moduleKey] || defaultModuleColors[moduleKey] || '#7C5CFC';
               return (
                 <motion.div
                   key={it.to}
-                  whileHover={{ scale: 1.02, x: 2 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ x: isCollapsed ? 0 : 4 }}
+                  whileTap={{ scale: 0.98 }}
                   className="w-full flex justify-center"
                 >
                   <NavLink
@@ -150,30 +145,32 @@ export function Sidebar() {
                     title={isCollapsed ? it.label : undefined}
                     className={({ isActive }) =>
                       clsx(
-                        'flex items-center text-sm font-medium transition-all duration-200 shrink-0 group',
-                        isCollapsed ? 'justify-center w-11 h-11 rounded-full' : 'px-4 py-2.5 rounded-2xl gap-3 w-full',
-                        isActive ? '' : 'hover:bg-accent'
+                        'flex items-center text-sm font-medium transition-all duration-300 shrink-0 group relative w-full',
+                        isCollapsed ? 'justify-center h-12 rounded-2xl' : 'px-4 py-3 rounded-2xl gap-3',
+                        isActive ? 'bg-card border border-border shadow-sm' : 'hover:bg-card/50 border border-transparent'
                       )
                     }
-                    style={({ isActive }) => isActive ? {
-                      backgroundColor: moduleColor,
-                      color: '#FFFFFF',
-                      boxShadow: `0 4px 14px -4px ${moduleColor}80`
-                    } : {
-                      color: 'var(--muted-foreground)'
-                    }}
                   >
                     {({ isActive }) => (
                       <>
+                        {isActive && (
+                          <motion.div 
+                            layoutId="activeIndicator"
+                            className="absolute left-2.5 w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: moduleColor, boxShadow: `0 0 10px ${moduleColor}` }}
+                          />
+                        )}
                         <it.icon 
                           size={isCollapsed ? 22 : 20} 
                           weight={isActive ? "fill" : "regular"} 
                           className={clsx(
-                            "transition-colors",
-                            isActive ? "text-white" : "text-muted-foreground group-hover:text-foreground"
+                            "transition-colors z-10",
+                            isActive ? "" : "text-muted-foreground group-hover:text-foreground",
+                            isActive && !isCollapsed ? "ml-2" : ""
                           )}
+                          style={isActive ? { color: moduleColor } : undefined}
                         />
-                        {!isCollapsed && <span className={clsx(isActive ? "text-white" : "group-hover:text-foreground")}>{it.label}</span>}
+                        {!isCollapsed && <span className={clsx("z-10", isActive ? "text-foreground font-semibold" : "text-muted-foreground group-hover:text-foreground")}>{it.label}</span>}
                       </>
                     )}
                   </NavLink>
@@ -184,45 +181,42 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Rodapé da Sidebar (Avatar e Config em Pill) */}
-      <div className={clsx(
-        "pb-6 pt-2 flex flex-col transition-all duration-300",
-        isCollapsed ? "w-16 mx-auto items-center" : "w-[calc(100%-24px)] mx-auto"
-      )}>
-        <div className={clsx(
-          "bg-card/80 border border-border flex flex-col gap-2 p-2",
-          isCollapsed ? "rounded-full items-center" : "rounded-3xl"
-        )}>
-          {/* Item Extra que parece existir na referencia antes do avatar */}
+      {/* Rodapé da Sidebar (Avatar e Config) */}
+      <div className="pb-6 pt-2 flex flex-col transition-all duration-300 w-full px-3 gap-1.5">
           <NavLink
             to="/configuracoes"
             title={isCollapsed ? 'Configurações' : undefined}
             className={({ isActive }) => clsx(
-              "flex items-center transition-colors shrink-0 group",
-              isCollapsed ? 'justify-center w-11 h-11 rounded-full' : 'px-4 py-2.5 rounded-2xl gap-3 w-full',
-              isActive ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              "flex items-center text-sm font-medium transition-all duration-300 shrink-0 group relative w-full",
+              isCollapsed ? 'justify-center h-12 rounded-2xl' : 'px-4 py-3 rounded-2xl gap-3',
+              isActive ? 'bg-card border border-border shadow-sm' : 'hover:bg-card/50 border border-transparent'
             )}
-            style={({ isActive }) => isActive ? {
-              backgroundColor: colors['configuracoes'] || defaultModuleColors['configuracoes'] || '#8E95A5',
-              boxShadow: `0 4px 14px -4px ${colors['configuracoes'] || defaultModuleColors['configuracoes'] || '#8E95A5'}80`
-            } : {}}
           >
             {({ isActive }) => (
               <>
-                <Gear size={isCollapsed ? 24 : 20} weight={isActive ? "fill" : "regular"} className={!isActive && !isCollapsed ? "group-hover:text-foreground transition-colors" : ""} />
-                {!isCollapsed && <span className={clsx("text-sm font-medium transition-colors", isActive ? "text-primary-foreground" : "group-hover:text-foreground")}>Configurações</span>}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeIndicator"
+                    className="absolute left-2.5 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_var(--primary)]"
+                  />
+                )}
+                <Gear size={isCollapsed ? 22 : 20} weight={isActive ? "fill" : "regular"} className={clsx(
+                  "transition-colors z-10",
+                  isActive ? "text-primary ml-2" : "text-muted-foreground group-hover:text-foreground"
+                )} />
+                {!isCollapsed && <span className={clsx("z-10", isActive ? "text-foreground font-semibold" : "text-muted-foreground group-hover:text-foreground")}>Configurações</span>}
               </>
             )}
           </NavLink>
 
           <div className={clsx(
-            "flex items-center bg-accent transition-colors cursor-pointer shrink-0",
-            isCollapsed ? 'justify-center w-11 h-11 rounded-full p-1' : 'justify-between px-2 py-1.5 rounded-2xl gap-3 w-full'
+            "flex items-center transition-all duration-300 cursor-pointer shrink-0 border border-transparent hover:bg-card/50",
+            isCollapsed ? 'justify-center h-12 w-12 mx-auto rounded-2xl' : 'justify-between px-3 py-2.5 rounded-2xl gap-3 w-full'
           )}>
             <div className="flex items-center gap-3">
               <div className={clsx(
-                "rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0",
-                isCollapsed ? "w-9 h-9" : "w-8 h-8"
+                "rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 border border-border/50",
+                isCollapsed ? "w-8 h-8" : "w-8 h-8"
               )}>
                 <img 
                   src="https://api.dicebear.com/7.x/avataaars/svg?seed=luiz" 
@@ -231,18 +225,22 @@ export function Sidebar() {
                 />
               </div>
               {!isCollapsed && (
-                <span className="text-sm font-medium text-foreground transition-colors truncate">
-                  luiz
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-foreground transition-colors truncate leading-tight">
+                    Luiz
+                  </span>
+                  <span className="text-[10px] text-muted-foreground truncate leading-tight">
+                    Pro Plan
+                  </span>
+                </div>
               )}
             </div>
             {!isCollapsed && (
-              <div className="w-6 h-6 flex items-center justify-center text-muted-foreground">
-                <CaretRight size={16} weight="bold" />
+              <div className="w-6 h-6 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors">
+                <CaretRight size={14} weight="bold" />
               </div>
             )}
           </div>
-        </div>
       </div>
 
     </aside>

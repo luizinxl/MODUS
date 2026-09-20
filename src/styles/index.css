@@ -17,35 +17,35 @@ html {
   --academic: #6366F1;
   --personal: #818CF8;
 
-  /* Legacy Backgrounds */
-  --bg-primary: #000000;
-  --bg-secondary: #12141C;
-  --bg-card: #171A24;
-  --bg-tertiary: #1D2029;
+  /* Legacy Backgrounds (Updating to blend with new theme) */
+  --bg-primary: #09090b;
+  --bg-secondary: #09090b;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-tertiary: rgba(255, 255, 255, 0.05);
 
   /* Legacy Text */
-  --text-primary: #FFFFFF;
-  --text-secondary: #9CA3AF;
-  --text-tertiary: #64748B;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
 
-  /* Semantic UI Tokens (shadcn/ui style) */
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #161924;
-  --card-foreground: #FFFFFF;
-  --popover: #12141F;
-  --popover-foreground: #FFFFFF;
-  --muted: #121421;
-  --muted-foreground: #8E95A5;
-  --border: #222736;
-  --input: #2B2C46;
+  /* Semantic UI Tokens (Premium Glassmorphism) */
+  --background: #09090b; /* zinc-950 */
+  --foreground: #fafafa; /* zinc-50 */
+  --card: rgba(255, 255, 255, 0.02);
+  --card-foreground: #fafafa;
+  --popover: rgba(9, 9, 11, 0.8);
+  --popover-foreground: #fafafa;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #a1a1aa; /* zinc-400 */
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.04);
   --primary: #7C5CFC;
   --primary-foreground: #FFFFFF;
-  --secondary: #1D212F;
-  --secondary-foreground: #9B82FF;
-  --accent: #252542;
-  --accent-foreground: #FFFFFF;
-  --destructive: #F43F5E;
+  --secondary: rgba(255, 255, 255, 0.05);
+  --secondary-foreground: #fafafa;
+  --accent: rgba(255, 255, 255, 0.08);
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444; /* red-500 */
   --destructive-foreground: #FFFFFF;
   --ring: #7C5CFC;
 }

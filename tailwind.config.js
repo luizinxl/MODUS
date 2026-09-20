@@ -5,10 +5,10 @@ export default {
     extend: {
       colors: {
         bg: {
-          primary: '#0B0D12',
-          secondary: '#12141C',
-          card: '#171A24',
-          tertiary: '#1D2029',
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          card: 'var(--bg-card)',
+          tertiary: 'var(--bg-tertiary)',
         },
         brand: {
           DEFAULT: '#7C5CFC',

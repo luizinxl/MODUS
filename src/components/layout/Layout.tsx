@@ -50,9 +50,9 @@ export function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-screen flex bg-background text-foreground overflow-hidden">
+    <div className="h-screen flex bg-background text-foreground overflow-hidden p-3 md:p-4 gap-4">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-card rounded-[2.5rem] border border-border shadow-2xl relative overflow-hidden backdrop-blur-3xl">
         {content}
       </div>
     </div>
