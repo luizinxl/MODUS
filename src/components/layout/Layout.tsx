@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
@@ -18,6 +18,8 @@ function NotificationInitializer() {
 export function Layout({ children }: { children: ReactNode }) {
   const { isMobile } = useMobileDetect();
 
+  const shouldReduceMotion = useReducedMotion();
+
   const content = (
     <div className="flex-1 flex flex-col relative overflow-hidden">
       <NotificationInitializer />
@@ -27,8 +29,9 @@ export function Layout({ children }: { children: ReactNode }) {
       </div>
       <motion.main
         key={typeof window !== 'undefined' ? window.location.pathname : 'page'}
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 12 }}
         animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
         transition={{ duration: 0.3 }}
         className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col"
       >
@@ -39,7 +42,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col pb-20 bg-[#000000] text-white">
+      <div className="min-h-screen flex flex-col pb-20 bg-background text-foreground">
         {content}
         <MobileNav />
       </div>
@@ -47,7 +50,7 @@ export function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-screen flex bg-[#000000] text-white overflow-hidden">
+    <div className="h-screen flex bg-background text-foreground overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {content}

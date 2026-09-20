@@ -3,16 +3,17 @@ import { Badge } from '@/components/common/Badge';
 import {
   BookOpen,
   Wallet,
-  TrendingUp,
+  TrendUp,
   User,
-  Bot,
-  Send,
-  Sparkles,
+  Robot,
+  PaperPlaneRight,
+  Sparkle,
   ArrowUpRight,
-  TrendingDown,
-  ChevronRight,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+  TrendDown,
+  CaretRight,
+} from '@phosphor-icons/react';
+import { useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useModuleColors, defaultModuleColors } from '@/hooks/useModuleColors';
 import {
   ResponsiveContainer,
@@ -42,7 +43,7 @@ const quick = [
     positive: true,
   },
   {
-    icon: TrendingUp,
+    icon: TrendUp,
     label: 'Carteira',
     value: '—',
     variant: 'financial' as const,
@@ -73,6 +74,24 @@ const performanceData = [
 export default function Dashboard() {
   const { colors } = useModuleColors();
   const themeColor = colors['inicio'] || defaultModuleColors['inicio'] || '#7C5CFC';
+  const shouldReduceMotion = useReducedMotion();
+  const motionInitial = shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 15 };
+  const motionAnimate = { opacity: 1, y: 0 };
+
+  const [prompt, setPrompt] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePromptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prompt.trim()) return;
+    setIsSubmitting(true);
+    // Simular o delay da rede para envio do prompt
+    setTimeout(() => {
+      console.log('Enviado:', prompt);
+      setPrompt('');
+      setIsSubmitting(false);
+    }, 1000);
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -82,17 +101,17 @@ export default function Dashboard() {
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2" style={{ color: themeColor }}>
             Seu dia
           </h1>
-          <p className="text-[#8E95A5] text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             Visão geral de tudo em um lugar só.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className="bg-[#171A24] text-[#8E95A5] border-[#222736] px-3 py-1">
-            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse mr-1" />
+          <Badge className="bg-muted text-muted-foreground border-border px-3 py-1">
+            <span className="w-2 h-2 rounded-full bg-income animate-pulse mr-1" />
             Tempo Real
           </Badge>
-          <div className="text-xs text-[#8E95A5] bg-[#141722] border border-[#222736] px-3 py-1.5 rounded-xl">
+          <div className="text-xs text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-xl">
             {new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
           </div>
         </div>
@@ -103,33 +122,34 @@ export default function Dashboard() {
         {quick.map((q, idx) => (
           <motion.div
             key={q.label}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: idx * 0.05 }}
+            initial={motionInitial}
+            animate={motionAnimate}
+            whileHover={{ y: shouldReduceMotion ? 0 : -4 }}
+            transition={{ duration: 0.35, delay: shouldReduceMotion ? 0 : idx * 0.05 }}
           >
             <Card
               variant={q.variant}
-              className="p-5 flex flex-col justify-between h-full bg-[#161924] hover:border-[#2C3345] transition-all"
+              className="p-5 flex flex-col justify-between h-full bg-card hover:border-primary transition-all"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#1D212F] border border-[#262B3B] flex items-center justify-center text-[#9B82FF]">
-                  <q.icon size={19} />
+                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-primary">
+                  <q.icon size={20} weight="bold" />
                 </div>
                 <span
                   className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
                     q.positive
-                      ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
-                      : 'bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/30'
+                      ? 'bg-income/15 text-income border border-income/30'
+                      : 'bg-destructive/15 text-destructive border border-destructive/30'
                   }`}
                 >
-                  {q.positive ? <ArrowUpRight size={12} /> : <TrendingDown size={12} />}
+                  {q.positive ? <ArrowUpRight size={12} weight="bold" /> : <TrendDown size={12} weight="bold" />}
                   {q.change}
                 </span>
               </div>
 
               <div>
-                <div className="text-2xl font-bold tracking-tight text-white">{q.value}</div>
-                <div className="text-xs text-[#8E95A5] mt-1 font-medium">{q.label}</div>
+                <div className="text-2xl font-bold tracking-tight text-foreground">{q.value}</div>
+                <div className="text-xs text-muted-foreground mt-1 font-medium">{q.label}</div>
               </div>
             </Card>
           </motion.div>
@@ -141,34 +161,34 @@ export default function Dashboard() {
         {/* Card AI Assistant estilo Monef com gradiente roxo */}
         <motion.div
           className="lg:col-span-5"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.15 }}
+          initial={motionInitial}
+          animate={motionAnimate}
+          transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : 0.15 }}
         >
-          <div className="h-full rounded-2xl bg-gradient-to-b from-[#231A4A] via-[#181829] to-[#12141F] border border-[#352B66]/60 p-6 flex flex-col justify-between shadow-[0_8px_32px_-4px_rgba(124,92,252,0.15)] relative overflow-hidden">
+          <div className="h-full rounded-2xl bg-gradient-to-b from-[#231A4A] via-[#181829] to-card border border-primary/30 p-6 flex flex-col justify-between shadow-[0_8px_32px_-4px_rgba(124,92,252,0.15)] relative overflow-hidden">
             {/* Efeito sutil de iluminação roxa */}
-            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 rounded-full bg-[#7C5CFC]/15 blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
 
             <div>
               {/* Header do Assistant */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-[#7C5CFC] text-white flex items-center justify-center shadow-lg shadow-[#7C5CFC]/40">
-                    <Bot size={18} />
+                  <div className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/40">
+                    <Robot size={18} weight="bold" />
                   </div>
                   <span className="text-sm font-bold text-white tracking-wide">AI Assistant</span>
                 </div>
-                <Badge className="bg-[#7C5CFC]/20 text-[#C4B5FD] border-[#7C5CFC]/30 text-[10px]">
-                  <Sparkles size={11} className="mr-1" />
+                <Badge className="bg-primary/20 text-primary-foreground border-primary/30 text-[10px]">
+                  <Sparkle size={11} className="mr-1" weight="fill" />
                   Monef Intelligence
                 </Badge>
               </div>
 
               {/* Chamada principal */}
-              <h3 className="text-xl sm:text-2xl font-extrabold text-white leading-tight mb-2">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight mb-2">
                 Como o Assistant pode te ajudar hoje?
               </h3>
-              <p className="text-xs text-[#A5ADC1] mb-6 leading-relaxed">
+              <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
                 Análise preditiva de saldo, priorização de tarefas acadêmicas e insights financeiros inteligentes.
               </p>
 
@@ -179,7 +199,8 @@ export default function Dashboard() {
                     <button
                       key={suggestion}
                       type="button"
-                      className="text-xs px-3 py-1.5 rounded-full bg-[#1E1E34]/80 text-[#D1D5DB] border border-[#333552] hover:border-[#7C5CFC]/60 hover:text-white hover:bg-[#252542] transition-all text-left"
+                      onClick={() => setPrompt(suggestion)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-accent/80 text-foreground border border-border hover:border-primary/60 hover:bg-accent transition-all text-left min-h-[44px]"
                     >
                       {suggestion}
                     </button>
@@ -190,21 +211,29 @@ export default function Dashboard() {
 
             {/* Barra de input do AI Assistant estilo Monef */}
             <div className="mt-4">
-              <div className="flex items-center gap-2 bg-[#121421]/90 border border-[#2B2C46] rounded-xl p-1.5 focus-within:border-[#7C5CFC]/70 transition-colors">
+              <form 
+                className={`flex items-center gap-2 bg-input/40 border border-border rounded-xl p-1.5 transition-colors ${
+                  isSubmitting ? 'opacity-70 pointer-events-none' : 'focus-within:border-primary/70'
+                }`}
+                onSubmit={handlePromptSubmit}
+              >
                 <input
                   type="text"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Pergunte qualquer coisa ao MODUS..."
-                  className="bg-transparent text-xs text-white placeholder-[#646B80] px-3 py-1.5 w-full outline-none"
-                  readOnly
+                  className="bg-transparent text-sm text-foreground placeholder-muted-foreground px-3 py-1.5 w-full outline-none"
+                  disabled={isSubmitting}
                 />
                 <button
-                  type="button"
+                  type="submit"
                   aria-label="Enviar prompt"
-                  className="w-8 h-8 rounded-lg bg-[#7C5CFC] hover:bg-[#6D4AEF] text-white flex items-center justify-center shadow-md shadow-[#7C5CFC]/30 transition-transform active:scale-95 shrink-0"
+                  className="w-10 h-10 rounded-lg bg-primary hover:bg-brand-dark text-white flex items-center justify-center shadow-md shadow-primary/30 transition-transform active:scale-95 shrink-0 min-h-[44px] min-w-[44px]"
+                  disabled={isSubmitting || !prompt.trim()}
                 >
-                  <Send size={14} />
+                  <PaperPlaneRight size={16} weight={isSubmitting ? "regular" : "bold"} className={isSubmitting ? "animate-pulse" : ""} />
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </motion.div>
@@ -212,15 +241,15 @@ export default function Dashboard() {
         {/* Gráfico Animado de Impacto Financeiro (Monef Style Recharts + Framer Motion) */}
         <motion.div
           className="lg:col-span-7"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.25 }}
+          initial={motionInitial}
+          animate={motionAnimate}
+          transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : 0.25 }}
         >
-          <div className="h-full rounded-2xl bg-[#161924] border border-[#222736] p-6 flex flex-col justify-between shadow-lg shadow-black/20">
+          <div className="h-full rounded-2xl bg-card border border-border p-6 flex flex-col justify-between shadow-lg shadow-black/20">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
               <div>
-                <h3 className="text-base font-bold text-white">Impacto Financeiro</h3>
-                <p className="text-xs text-[#8E95A5]">
+                <h3 className="text-base font-bold text-foreground">Impacto Financeiro</h3>
+                <p className="text-xs text-muted-foreground">
                   Comparativo de fluxo e evolução patrimonial
                 </p>
               </div>
@@ -228,12 +257,12 @@ export default function Dashboard() {
               {/* Legenda estilizada Monef */}
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-                  <span className="text-[#D1D5DB] font-medium">Receitas</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-income" />
+                  <span className="text-muted-foreground font-medium">Receitas</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#7C5CFC]" />
-                  <span className="text-[#D1D5DB] font-medium">Despesas</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                  <span className="text-muted-foreground font-medium">Despesas</span>
                 </div>
               </div>
             </div>
@@ -272,14 +301,14 @@ export default function Dashboard() {
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-[#12141F] text-white text-xs p-3 rounded-xl shadow-xl border border-[#2B3145]">
-                            <p className="text-[#8E95A5] font-semibold mb-1.5">{label}</p>
+                          <div className="bg-popover text-popover-foreground text-xs p-3 rounded-xl shadow-xl border border-border">
+                            <p className="text-muted-foreground font-semibold mb-1.5">{label}</p>
                             <div className="flex justify-between gap-4 py-0.5">
-                              <span className="text-[#10B981]">Receitas:</span>
+                              <span className="text-income">Receitas:</span>
                               <strong>R$ {payload[0]?.value?.toLocaleString('pt-BR')}</strong>
                             </div>
                             <div className="flex justify-between gap-4 py-0.5">
-                              <span className="text-[#9B82FF]">Despesas:</span>
+                              <span className="text-primary">Despesas:</span>
                               <strong>R$ {payload[1]?.value?.toLocaleString('pt-BR')}</strong>
                             </div>
                           </div>
@@ -319,42 +348,42 @@ export default function Dashboard() {
 
       {/* Cards Existentes preservados com o novo visual */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card variant="academic" className="p-6">
+        <Card variant="academic" className="p-6 bg-card border-border">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <span>📚</span> Próximas tarefas
             </h2>
-            <Badge className="text-[11px] bg-[#6366F1]/15 text-[#818CF8] border-[#6366F1]/30">
+            <Badge className="text-[11px] bg-academic/15 text-academic border-academic/30">
               Acadêmico
             </Badge>
           </div>
-          <p className="text-sm text-[#8E95A5] leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Conecte o Supabase e sincronize suas tarefas para vê-las aqui.
           </p>
-          <div className="mt-4 pt-4 border-t border-[#222736] flex items-center justify-between text-xs text-[#646B80]">
+          <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
             <span>Sincronização pendente</span>
-            <span className="text-[#7C5CFC] font-medium flex items-center gap-0.5 hover:underline cursor-pointer">
-              Configurar <ChevronRight size={14} />
+            <span className="text-primary font-medium flex items-center gap-0.5 hover:underline cursor-pointer min-h-[44px]">
+              Configurar <CaretRight size={16} weight="bold" />
             </span>
           </div>
         </Card>
 
-        <Card variant="financial" className="p-6">
+        <Card variant="financial" className="p-6 bg-card border-border">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <span>💰</span> Resumo financeiro
             </h2>
-            <Badge className="text-[11px] bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30">
+            <Badge className="text-[11px] bg-financial/15 text-financial border-financial/30">
               Financeiro
             </Badge>
           </div>
-          <p className="text-sm text-[#8E95A5] leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Conecte o Pluggy para importar contas, cartões e transações.
           </p>
-          <div className="mt-4 pt-4 border-t border-[#222736] flex items-center justify-between text-xs text-[#646B80]">
+          <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
             <span>Open Finance</span>
-            <span className="text-[#10B981] font-medium flex items-center gap-0.5 hover:underline cursor-pointer">
-              Conectar <ChevronRight size={14} />
+            <span className="text-financial font-medium flex items-center gap-0.5 hover:underline cursor-pointer min-h-[44px]">
+              Conectar <CaretRight size={16} weight="bold" />
             </span>
           </div>
         </Card>
