@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import AcademicDashboard from '@/pages/Academic';
@@ -32,6 +33,7 @@ export default function App() {
           </Routes>
         </AnimatePresence>
       </Layout>
+      <Analytics />
     </ModuleColorsProvider>
   );
 }
